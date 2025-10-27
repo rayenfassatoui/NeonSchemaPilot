@@ -85,7 +85,8 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
     const { snapshot } = response;
     const tableText = snapshot.tableCount === 1 ? "table" : "tables";
     const columnText = snapshot.columnCount === 1 ? "column" : "columns";
-    return `Found ${snapshot.tableCount} ${tableText} and ${snapshot.columnCount} ${columnText}.`;
+    const relationText = snapshot.relations.length === 1 ? "relation" : "relations";
+    return `Found ${snapshot.tableCount} ${tableText}, ${snapshot.columnCount} ${columnText}, and ${snapshot.relations.length} ${relationText}.`;
   }, [response]);
 
   const encodedConnection = React.useMemo(() => {
@@ -179,6 +180,14 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
                 {response.snapshot.tables.length > 3 ? (
                   <p>…and more tables detected. Full preview generated below.</p>
                 ) : null}
+                {response.snapshot.relations.length ? (
+                  <p className="text-muted-foreground">
+                    {response.snapshot.relations.length} foreign key
+                    {response.snapshot.relations.length === 1 ? " relation" : " relations"} detected.
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">No foreign key relations found.</p>
+                )}
               </div>
             </div>
           ) : null}

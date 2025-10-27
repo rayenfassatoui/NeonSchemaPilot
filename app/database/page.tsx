@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { describeDatabase, isValidConnectionString } from "@/lib/neon";
 import { Card, CardContent } from "@/components/ui/card";
+import { DatabaseDiagram } from "@/components/database-diagram";
 import type { DescribeResponse } from "@/types/neon";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,8 @@ function decodeConnection(connection?: string) {
 function formatSummary(snapshot: DescribeResponse["snapshot"]) {
   const tableText = snapshot.tableCount === 1 ? "table" : "tables";
   const columnText = snapshot.columnCount === 1 ? "column" : "columns";
-  return `${snapshot.tableCount} ${tableText} · ${snapshot.columnCount} ${columnText}`;
+  const relationText = snapshot.relations.length === 1 ? "relation" : "relations";
+  return `${snapshot.tableCount} ${tableText} · ${snapshot.columnCount} ${columnText} · ${snapshot.relations.length} ${relationText}`;
 }
 
 export default async function DatabasePage({ searchParams }: DatabasePageProps) {
@@ -134,7 +136,7 @@ export default async function DatabasePage({ searchParams }: DatabasePageProps) 
               </div>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-4">
             <Card className="rounded-2xl border-border/70 bg-background/80 shadow-sm">
               <CardContent className="space-y-1 px-6 py-5">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Tables</p>
@@ -155,6 +157,15 @@ export default async function DatabasePage({ searchParams }: DatabasePageProps) 
             </Card>
             <Card className="rounded-2xl border-border/70 bg-background/80 shadow-sm">
               <CardContent className="space-y-1 px-6 py-5">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Relations</p>
+                <p className="text-3xl font-semibold text-foreground">{snapshot.relations.length}</p>
+                <p className="text-xs text-muted-foreground">
+                  Foreign keys discovered
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-border/70 bg-background/80 shadow-sm">
+              <CardContent className="space-y-1 px-6 py-5">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Summary</p>
                 <p className="text-sm font-medium text-foreground">
                   {formatSummary(snapshot)}
@@ -166,6 +177,23 @@ export default async function DatabasePage({ searchParams }: DatabasePageProps) 
             </Card>
           </div>
         </header>
+
+        {snapshot.tables.length ? (
+          <section className="space-y-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold">Visual layout</h2>
+                <p className="text-sm text-muted-foreground">
+                  Drag the table cards to arrange them. Relation lines update in real time.
+                </p>
+              </div>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                {snapshot.relations.length} relation{snapshot.relations.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            <DatabaseDiagram tables={snapshot.tables} relations={snapshot.relations} />
+          </section>
+        ) : null}
 
         <section className="space-y-6">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
@@ -242,6 +270,37 @@ export default async function DatabasePage({ searchParams }: DatabasePageProps) 
             </div>
           )}
         </section>
+
+        {snapshot.relations.length ? (
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-4">
+              <h2 className="text-2xl font-semibold">Detected relations</h2>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                {snapshot.relations.length} foreign key
+                {snapshot.relations.length === 1 ? " relation" : " relations"}
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {snapshot.relations.map((relation) => (
+                <div
+                  key={`${relation.constraintName}-${relation.source.table}-${relation.source.column}-${relation.target.table}-${relation.target.column}`}
+                  className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3 shadow-sm"
+                >
+                  <p className="text-sm font-semibold text-foreground">
+                    {relation.source.schema}.{relation.source.table}.{relation.source.column}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    → {relation.target.schema}.{relation.target.table}
+                    {relation.target.column ? `.${relation.target.column}` : ""}
+                  </p>
+                  <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {relation.constraintName}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-4">

@@ -30,6 +30,7 @@ export default function Home() {
     | {
         tableCount: number;
         columnCount: number;
+        relationCount: number;
       }
     | null
   >(null);
@@ -39,6 +40,7 @@ export default function Home() {
     setTableSummary({
       tableCount: payload.snapshot.tableCount,
       columnCount: payload.snapshot.columnCount,
+      relationCount: payload.snapshot.relations.length,
     });
   }, []);
 
@@ -47,6 +49,7 @@ export default function Home() {
     const partials = [] as string[];
     partials.push(`${tableSummary.tableCount} ${tableSummary.tableCount === 1 ? "table" : "tables"}`);
     partials.push(`${tableSummary.columnCount} ${tableSummary.columnCount === 1 ? "column" : "columns"}`);
+    partials.push(`${tableSummary.relationCount} ${tableSummary.relationCount === 1 ? "relation" : "relations"}`);
     return partials.join(" · ");
   }, [tableSummary]);
 
