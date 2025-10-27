@@ -223,7 +223,7 @@ export function SiteNavbar() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="wait">
         {showNav ? (
           <motion.nav
             key="site-nav"
@@ -315,10 +315,7 @@ export function SiteNavbar() {
               </>
             )}
           </motion.nav>
-        ) : null}
-      </AnimatePresence>
-      <AnimatePresence initial={false}>
-        {!showNav ? (
+        ) : (
           <motion.button
             key="site-nav-pill"
             type="button"
@@ -329,11 +326,11 @@ export function SiteNavbar() {
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             DB
           </motion.button>
-        ) : null}
+        )}
       </AnimatePresence>
     </div>
   );
