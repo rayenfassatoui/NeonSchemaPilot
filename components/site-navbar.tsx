@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AnimatePresence, motion } from "framer-motion";
 
 type NavHighlight = {
   label: string;
@@ -222,100 +223,118 @@ export function SiteNavbar() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {showNav ? (
-        <nav className="flex w-full max-w-5xl flex-col gap-4 rounded-3xl border border-border/50 bg-background/90 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.45)] backdrop-blur">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-primary/60 text-sm font-semibold text-primary-foreground shadow-inner shadow-primary/50"
-                data-drag-handle
-                aria-label="Drag navigation"
-                onClick={collapsed ? handleExpand : undefined}
-              >
-                DB
-              </button>
-              <div className="leading-tight">
-                <p className="text-sm font-semibold tracking-tight">Neon Flowwork</p>
-                <p className="text-xs text-muted-foreground">Crafting clarity for complex schemas</p>
+      <AnimatePresence initial={false}>
+        {showNav ? (
+          <motion.nav
+            key="site-nav"
+            initial={{ opacity: 0, scale: 0.9, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+            transition={{ duration: 0.55, ease: "easeInOut" }}
+            className="flex w-full max-w-5xl flex-col gap-4 rounded-3xl border border-border/50 bg-background/90 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.45)] backdrop-blur"
+            style={{ transformOrigin: "top left" }}
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-primary/60 text-sm font-semibold text-primary-foreground shadow-inner shadow-primary/50"
+                  data-drag-handle
+                  aria-label="Drag navigation"
+                  onClick={collapsed ? handleExpand : undefined}
+                >
+                  DB
+                </button>
+                <div className="leading-tight">
+                  <p className="text-sm font-semibold tracking-tight">Neon Flowwork</p>
+                  <p className="text-xs text-muted-foreground">Crafting clarity for complex schemas</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={collapsed ? handleExpand : handleCollapse}>
+                  {collapsed ? "Expand" : "Collapse"}
+                </Button>
+                <ThemeToggle />
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="https://status.neon.tech" target="_blank" rel="noreferrer">
+                    Status
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={appendConnection("/database/visual")}>Open diagram</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/">Connect new URL</Link>
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={collapsed ? handleExpand : handleCollapse}>
-                {collapsed ? "Expand" : "Collapse"}
-              </Button>
-              <ThemeToggle />
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="https://status.neon.tech" target="_blank" rel="noreferrer">
-                  Status
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link href={appendConnection("/database/visual")}>Open diagram</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/">Connect new URL</Link>
-              </Button>
-            </div>
-          </div>
-          {!collapsed && <Separator className="hidden sm:block" />}
-          {collapsed ? (
-            compactHighlights
-          ) : (
-            <>
-              {highlightCards}
-              <section className="grid grid-cols-1 gap-3 text-[11px] sm:grid-cols-3">
-                <div className="rounded-2xl border border-dashed border-border/70 bg-background/60 p-3">
-                  <p className="uppercase tracking-wide text-muted-foreground">Current route</p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">
-                    /{pathSegments.join("/")}
-                  </p>
-                  <p className="mt-3 text-muted-foreground">
-                    We preserve your canvas layout per schema so you always resume where you left off.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
-                  <p className="uppercase tracking-wide text-muted-foreground">Recent activity</p>
-                  <ul className="mt-2 space-y-1">
-                    <li className="flex items-center justify-between text-muted-foreground">
-                      <span>Preview refreshed</span>
-                      <span className="font-semibold text-foreground">2m ago</span>
-                    </li>
-                    <li className="flex items-center justify-between text-muted-foreground">
-                      <span>Relations mapped</span>
-                      <span className="font-semibold text-foreground">5 tables</span>
-                    </li>
-                    <li className="flex items-center justify-between text-muted-foreground">
-                      <span>SQL snapshot</span>
-                      <span className="font-semibold text-foreground">Updated</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 p-3 text-muted-foreground">
-                  <p className="uppercase tracking-wide">Next recommended step</p>
-                  <p className="mt-2 text-sm font-semibold text-foreground">Invite your teammate</p>
-                  <p className="mt-2">
-                    Share the diagram views so teammates can drag tables, annotate relations, and export context.
-                  </p>
-                  <Button variant="ghost" size="sm" className="mt-3 self-start" asChild>
-                    <Link href="mailto:?subject=Share%20database%20diagram&body=Take%20a%20look%20at%20our%20Neon%20schema%20overview">Send invite</Link>
-                  </Button>
-                </div>
-              </section>
-            </>
-          )}
-        </nav>
-      ) : (
-        <button
-          type="button"
-          className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-primary/60 text-sm font-semibold text-primary-foreground shadow-inner shadow-primary/50"
-          data-drag-handle
-          aria-label="Open navigation"
-          onClick={handleExpand}
-        >
-          DB
-        </button>
-      )}
+            {!collapsed && <Separator className="hidden sm:block" />}
+            {collapsed ? (
+              compactHighlights
+            ) : (
+              <>
+                {highlightCards}
+                <section className="grid grid-cols-1 gap-3 text-[11px] sm:grid-cols-3">
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-background/60 p-3">
+                    <p className="uppercase tracking-wide text-muted-foreground">Current route</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      /{pathSegments.join("/")}
+                    </p>
+                    <p className="mt-3 text-muted-foreground">
+                      We preserve your canvas layout per schema so you always resume where you left off.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border/60 bg-muted/30 p-3">
+                    <p className="uppercase tracking-wide text-muted-foreground">Recent activity</p>
+                    <ul className="mt-2 space-y-1">
+                      <li className="flex items-center justify-between text-muted-foreground">
+                        <span>Preview refreshed</span>
+                        <span className="font-semibold text-foreground">2m ago</span>
+                      </li>
+                      <li className="flex items-center justify-between text-muted-foreground">
+                        <span>Relations mapped</span>
+                        <span className="font-semibold text-foreground">5 tables</span>
+                      </li>
+                      <li className="flex items-center justify-between text-muted-foreground">
+                        <span>SQL snapshot</span>
+                        <span className="font-semibold text-foreground">Updated</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="rounded-2xl border border-border/40 bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 p-3 text-muted-foreground">
+                    <p className="uppercase tracking-wide">Next recommended step</p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">Invite your teammate</p>
+                    <p className="mt-2">
+                      Share the diagram views so teammates can drag tables, annotate relations, and export context.
+                    </p>
+                    <Button variant="ghost" size="sm" className="mt-3 self-start" asChild>
+                      <Link href="mailto:?subject=Share%20database%20diagram&body=Take%20a%20look%20at%20our%20Neon%20schema%20overview">Send invite</Link>
+                    </Button>
+                  </div>
+                </section>
+              </>
+            )}
+          </motion.nav>
+        ) : null}
+      </AnimatePresence>
+      <AnimatePresence initial={false}>
+        {!showNav ? (
+          <motion.button
+            key="site-nav-pill"
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-primary/60 text-sm font-semibold text-primary-foreground shadow-inner shadow-primary/50"
+            data-drag-handle
+            aria-label="Open navigation"
+            onClick={handleExpand}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            DB
+          </motion.button>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
