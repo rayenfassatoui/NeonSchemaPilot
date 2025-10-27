@@ -1,22 +1,25 @@
 "use client";
-
 import * as React from "react";
 
+import { DiagramBoard } from "./database-diagram/diagram-board";
+import { ZoomControls } from "./database-diagram/zoom-controls";
+import { tableKey } from "./database-diagram/types";
+import type {
+    DiagramLine,
+    Positions,
+    SizeMap,
+    ViewportState,
+} from "./database-diagram/types";
 import type { RelationEdge, TableInfo } from "@/types/neon";
-import { cn } from "@/lib/utils";
 
 const CANVAS_MARGIN = 48;
 const COLUMN_SPACING = 320;
 const ROW_SPACING = 240;
 const DEFAULT_CARD_WIDTH = 280;
 const DEFAULT_CARD_HEIGHT = 200;
-
-type Positions = Record<string, { x: number; y: number }>;
-type SizeMap = Record<string, { width: number; height: number }>;
-
-function tableKey(table: TableInfo) {
-  return `${table.schema}.${table.name}`;
-}
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 2.5;
+const SCALE_STEP = 1.1;
 
 function buildInitialPositions(tables: TableInfo[]): Positions {
   if (!tables.length) return {};
@@ -50,8 +53,19 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
     offsetX: number;
     offsetY: number;
     containerRect: DOMRect;
+    scale: number;
+    translateX: number;
+    translateY: number;
+  } | null>(null);
+  const panState = React.useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
   } | null>(null);
 
+  const [viewport, setViewport] = React.useState<ViewportState>({ scale: 1, x: 0, y: 0 });
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [positions, setPositions] = React.useState<Positions>(() =>
     buildInitialPositions(tables)
@@ -94,8 +108,7 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
       let changed = false;
 
       cardRefs.current.forEach((node, id) => {
-        const rect = node.getBoundingClientRect();
-        const size = { width: rect.width, height: rect.height };
+        const size = { width: node.offsetWidth, height: node.offsetHeight };
         next[id] = size;
 
         const prevSize = prev[id];
@@ -172,24 +185,123 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
     return () => observer.disconnect();
   }, []);
 
-  const clampPosition = React.useCallback(
-    (id: string, x: number, y: number) => {
-      const size = cardSizes[id] ?? {
-        width: DEFAULT_CARD_WIDTH,
-        height: DEFAULT_CARD_HEIGHT,
-      };
+  const clampPosition = React.useCallback((_: string, x: number, y: number) => ({ x, y }), []);
 
-      const minX = CANVAS_MARGIN;
-      const minY = CANVAS_MARGIN;
-      const maxX = Math.max(canvasSize.width - size.width - CANVAS_MARGIN, minX);
-      const maxY = Math.max(canvasSize.height - size.height - CANVAS_MARGIN, minY);
+  const applyZoom = React.useCallback(
+    (factor: number, center?: { x: number; y: number }) => {
+      setViewport((prev) => {
+        const nextScale = Math.min(
+          MAX_SCALE,
+          Math.max(MIN_SCALE, prev.scale * factor)
+        );
+        if (nextScale === prev.scale) return prev;
 
-      return {
-        x: Math.min(Math.max(x, minX), maxX),
-        y: Math.min(Math.max(y, minY), maxY),
-      };
+        const cx = center?.x ?? canvasSize.width / 2;
+        const cy = center?.y ?? canvasSize.height / 2;
+        const originX = (cx - prev.x) / prev.scale;
+        const originY = (cy - prev.y) / prev.scale;
+        const nextX = cx - originX * nextScale;
+        const nextY = cy - originY * nextScale;
+
+        return { scale: nextScale, x: nextX, y: nextY };
+      });
     },
-    [cardSizes, canvasSize.height, canvasSize.width]
+    [canvasSize.height, canvasSize.width]
+  );
+
+  const handleZoomIn = React.useCallback(() => applyZoom(SCALE_STEP), [applyZoom]);
+  const handleZoomOut = React.useCallback(
+    () => applyZoom(1 / SCALE_STEP),
+    [applyZoom]
+  );
+  const handleResetView = React.useCallback(
+    () =>
+      setViewport((prev) => {
+        if (prev.scale === 1 && prev.x === 0 && prev.y === 0) {
+          return prev;
+        }
+        return { scale: 1, x: 0, y: 0 };
+      }),
+    []
+  );
+
+  const handleWheel = React.useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const center = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+
+      const delta = event.deltaY;
+      if (delta === 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      applyZoom(delta < 0 ? SCALE_STEP : 1 / SCALE_STEP, center);
+    },
+    [applyZoom]
+  );
+
+  const handlePanPointerDown = React.useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement;
+      if (target.closest("[data-table-card]")) {
+        return;
+      }
+
+      if (!containerRef.current) return;
+
+      event.preventDefault();
+
+      panState.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        originX: viewport.x,
+        originY: viewport.y,
+      };
+
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [viewport.x, viewport.y]
+  );
+
+  const handlePanPointerMove = React.useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const state = panState.current;
+      if (!state || state.pointerId !== event.pointerId) return;
+
+      event.preventDefault();
+
+      const nextX = state.originX + (event.clientX - state.startX);
+      const nextY = state.originY + (event.clientY - state.startY);
+
+      setViewport((prev) => {
+        if (prev.x === nextX && prev.y === nextY) {
+          return prev;
+        }
+        return { ...prev, x: nextX, y: nextY };
+      });
+    },
+    []
+  );
+
+  const handlePanPointerEnd = React.useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const state = panState.current;
+      if (!state || state.pointerId !== event.pointerId) return;
+
+      panState.current = null;
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {
+        // Ignore if capture was not set.
+      }
+    },
+    []
   );
 
   const handlePointerDown = React.useCallback(
@@ -200,8 +312,10 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
       event.stopPropagation();
 
       const containerRect = containerRef.current.getBoundingClientRect();
-      const pointerX = event.clientX - containerRect.left;
-      const pointerY = event.clientY - containerRect.top;
+      const pointerX =
+        (event.clientX - containerRect.left - viewport.x) / viewport.scale;
+      const pointerY =
+        (event.clientY - containerRect.top - viewport.y) / viewport.scale;
       const current = positions[id] ?? { x: pointerX, y: pointerY };
 
       dragState.current = {
@@ -210,12 +324,15 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
         offsetX: current.x - pointerX,
         offsetY: current.y - pointerY,
         containerRect,
+        scale: viewport.scale,
+        translateX: viewport.x,
+        translateY: viewport.y,
       };
 
       setActiveId(id);
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [positions]
+    [positions, viewport.scale, viewport.x, viewport.y]
   );
 
   const handlePointerMove = React.useCallback(
@@ -224,9 +341,14 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
       if (!state || state.pointerId !== event.pointerId) return;
 
       event.preventDefault();
+      event.stopPropagation();
 
-      const pointerX = event.clientX - state.containerRect.left;
-      const pointerY = event.clientY - state.containerRect.top;
+      const pointerX =
+        (event.clientX - state.containerRect.left - state.translateX) /
+        state.scale;
+      const pointerY =
+        (event.clientY - state.containerRect.top - state.translateY) /
+        state.scale;
       const rawX = pointerX + state.offsetX;
       const rawY = pointerY + state.offsetY;
 
@@ -248,6 +370,7 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
 
     dragState.current = null;
     setActiveId(null);
+    event.stopPropagation();
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {
@@ -274,7 +397,31 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
     return set;
   }, [relations]);
 
-  const lines = React.useMemo(() => {
+  const boardDimensions = React.useMemo(() => {
+    let maxX = canvasSize.width;
+    let maxY = canvasSize.height;
+
+    tables.forEach((table) => {
+      const id = tableKey(table);
+      const position = positions[id];
+      if (!position) return;
+
+      const size = cardSizes[id] ?? {
+        width: DEFAULT_CARD_WIDTH,
+        height: DEFAULT_CARD_HEIGHT,
+      };
+
+      maxX = Math.max(maxX, position.x + size.width + CANVAS_MARGIN);
+      maxY = Math.max(maxY, position.y + size.height + CANVAS_MARGIN);
+    });
+
+    return {
+      width: Math.max(canvasSize.width, Math.ceil(maxX)),
+      height: Math.max(canvasSize.height, Math.ceil(maxY)),
+    };
+  }, [tables, positions, cardSizes, canvasSize.width, canvasSize.height]);
+
+  const lines = React.useMemo<DiagramLine[]>(() => {
     return relations
       .map((relation) => {
         const sourceId = `${relation.source.schema}.${relation.source.table}`;
@@ -300,7 +447,7 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
           y2: targetPos.y + targetSize.height / 2,
         };
       })
-      .filter(Boolean) as Array<{ id: string; x1: number; y1: number; x2: number; y2: number }>;
+      .filter(Boolean) as DiagramLine[];
   }, [relations, positions, cardSizes]);
 
   return (
@@ -308,100 +455,31 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
       ref={containerRef}
       className="relative isolate w-full overflow-hidden rounded-3xl border border-border/60 bg-muted/20"
       style={{ height: defaultHeight }}
+      onWheel={handleWheel}
+      onPointerDown={handlePanPointerDown}
+      onPointerMove={handlePanPointerMove}
+      onPointerUp={handlePanPointerEnd}
+      onPointerCancel={handlePanPointerEnd}
     >
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <marker
-            id="diagram-arrow"
-            markerWidth="10"
-            markerHeight="10"
-            refX="8"
-            refY="5"
-            orient="auto"
-          >
-            <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
-          </marker>
-        </defs>
-        <g stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinecap="round">
-          {lines.map((line) => (
-            <line
-              key={line.id}
-              x1={line.x1}
-              y1={line.y1}
-              x2={line.x2}
-              y2={line.y2}
-              markerEnd="url(#diagram-arrow)"
-              className="opacity-70"
-            />
-          ))}
-        </g>
-      </svg>
-      {tables.map((table) => {
-        const id = tableKey(table);
-        const position = positions[id] ?? { x: CANVAS_MARGIN, y: CANVAS_MARGIN };
-        return (
-          <div
-            key={id}
-            ref={registerCard(id)}
-            className={cn(
-              "absolute flex w-[280px] cursor-grab touch-none select-none",
-              activeId === id && "cursor-grabbing"
-            )}
-            style={{ left: position.x, top: position.y }}
-            onPointerDown={handlePointerDown(id)}
-            onPointerMove={handlePointerMove}
-            onPointerUp={finalizeDrag}
-            onPointerCancel={finalizeDrag}
-          >
-            <div className="flex w-full flex-col gap-3 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg shadow-primary/10 backdrop-blur">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{table.name}</p>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {table.schema}
-                  </p>
-                </div>
-                <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                  {table.columns.length} col{table.columns.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <div className="space-y-2 text-xs">
-                {table.columns.length ? (
-                  table.columns.slice(0, 12).map((column) => {
-                    const columnKey = `${table.schema}.${table.name}.${column.name}`;
-                    const isSource = referencingColumns.has(columnKey);
-                    const isTarget = referencedColumns.has(columnKey);
-                    return (
-                      <div
-                        key={column.name}
-                        className={cn(
-                          "flex items-center justify-between gap-3 rounded-lg border border-transparent bg-transparent px-2 py-1 transition-colors",
-                          isSource && "border-primary/30 bg-primary/10",
-                          !isSource && isTarget && "border-primary/15 bg-primary/5"
-                        )}
-                      >
-                        <span className="font-medium text-foreground">{column.name}</span>
-                        <span className="text-muted-foreground">{column.dataType}</span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-muted-foreground">No columns</p>
-                )}
-                {table.columns.length > 12 ? (
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    +{table.columns.length - 12} more columns
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,theme(colors.border/10),transparent_65%)]" />
+
+      <ZoomControls onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} onReset={handleResetView} />
+
+      <DiagramBoard
+        dimensions={boardDimensions}
+        viewport={viewport}
+        lines={lines}
+        tables={tables}
+        positions={positions}
+        registerCard={registerCard}
+        activeId={activeId}
+        referencingColumns={referencingColumns}
+        referencedColumns={referencedColumns}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerEnd={finalizeDrag}
+        fallbackMargin={CANVAS_MARGIN}
+      />
     </div>
   );
 }
