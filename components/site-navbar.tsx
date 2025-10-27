@@ -190,7 +190,7 @@ export function SiteNavbar() {
   );
 
   const compactHighlights = (
-    <div className="flex flex-wrap gap-2 text-xs" id="site-navbar-highlights">
+    <div className="flex flex-wrap gap-2 px-4 text-xs" id="site-navbar-highlights">
       {ROUTE_HIGHLIGHTS.map((item) => {
         const href = appendConnection(item.href);
         const isActive = pathname?.startsWith(item.href);
@@ -227,9 +227,9 @@ export function SiteNavbar() {
         {showNav ? (
           <motion.nav
             key="site-nav"
-            initial={{ opacity: 0, scale: 0.9, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+            initial={{ opacity: 0, scale: 0.9, y: 16, paddingLeft: collapsed && hovering ? 0 : 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0, paddingLeft: collapsed && hovering ? 0 : 16 }}
+            exit={{ opacity: 0, scale: 0.92, y: 12, paddingLeft: 0 }}
             transition={{ duration: 0.55, ease: "easeInOut" }}
             className="flex w-full max-w-5xl flex-col gap-4 rounded-3xl border border-border/50 bg-background/90 p-4 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.45)] backdrop-blur"
             style={{ transformOrigin: "top left" }}
