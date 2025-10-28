@@ -59,6 +59,7 @@ function ArticleContent({ message, isUser }: { message: AssistantChatMessage; is
 
   const hasOperations = Boolean(message.operations?.length);
   const hasWarnings = Boolean(message.warnings?.length);
+  const awaitingConfirmation = message.requiresConfirmation;
 
   return (
     <div className="space-y-4">
@@ -71,6 +72,11 @@ function ArticleContent({ message, isUser }: { message: AssistantChatMessage; is
       ) : null}
       {hasOperations ? <OperationList operations={message.operations!} /> : null}
       {hasWarnings ? <WarningList warnings={message.warnings!} /> : null}
+      {awaitingConfirmation ? (
+        <div className="rounded-2xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
+          Awaiting your confirmation before committing to Neon.
+        </div>
+      ) : null}
     </div>
   );
 }

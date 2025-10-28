@@ -12,4 +12,6 @@ export type AssistantChatMessage = {
   operations?: OperationExecution[];
   warnings?: string[];
   snapshot?: SnapshotSummary;
+  requiresConfirmation?: boolean;
+  plan?: AssistantMessagePayload["plan"];
 };

@@ -44,10 +44,44 @@ export type PlanRequestPayload = {
 
 export async function generatePlan({ message, history, databaseDigest }: PlanRequestPayload): Promise<AiPlan> {
   const model = getModel();
-  const contents: Content[] = [
+  const baseContents = buildPromptContents({ message, history, databaseDigest });
+
+  try {
+    const text = await requestPlanText(model, baseContents);
+    return parseAiPlan(text);
+  } catch (error) {
+    const retryContents = [
+      ...baseContents,
+      {
+        role: "user" as const,
+        parts: [
+          {
+            text: "Your previous response was not valid JSON. Respond again using strictly valid JSON that matches the documented schema.",
+          },
+        ],
+      },
+    ];
+
+    try {
+      const retryText = await requestPlanText(model, retryContents);
+      return parseAiPlan(retryText);
+    } catch (secondError) {
+      const detail =
+        secondError instanceof Error ? secondError.message : "Unknown parse failure from Gemini.";
+      throw new Error(`Gemini response could not be parsed after retry: ${detail}`);
+    }
+  }
+}
+
+function buildPromptContents({
+  message,
+  history,
+  databaseDigest,
+}: PlanRequestPayload & { history?: ConversationHistoryEntry[] }): Content[] {
+  return [
     ...convertHistory(history),
     {
-      role: "user",
+      role: "user" as const,
       parts: [
         {
           text: [
@@ -63,7 +97,9 @@ export async function generatePlan({ message, history, databaseDigest }: PlanReq
       ],
     },
   ];
+}
 
+async function requestPlanText(model: GenerativeModel, contents: Content[]) {
   const result = await model.generateContent({
     contents,
     generationConfig: {
@@ -79,5 +115,5 @@ export async function generatePlan({ message, history, databaseDigest }: PlanReq
     throw new Error("Gemini returned an empty response.");
   }
 
-  return parseAiPlan(text);
+  return text;
 }

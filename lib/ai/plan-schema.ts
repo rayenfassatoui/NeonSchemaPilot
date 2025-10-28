@@ -118,9 +118,10 @@ const planSchema = z.object({
 });
 
 export function parseAiPlan(raw: string): AiPlan {
+  const sanitized = sanitizeModelResponse(raw);
   let payload: unknown;
   try {
-    payload = JSON.parse(raw);
+    payload = JSON.parse(sanitized);
   } catch (error) {
     throw new Error(`Gemini response was not valid JSON: ${(error as Error).message}`);
   }
@@ -128,6 +129,26 @@ export function parseAiPlan(raw: string): AiPlan {
   const normalized = normalizePlanPayload(payload);
   const result = planSchema.parse(normalized);
   return result as AiPlan;
+}
+
+function sanitizeModelResponse(raw: string) {
+  let candidate = raw.trim();
+  if (!candidate) {
+    return candidate;
+  }
+
+  const codeBlockMatch = candidate.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (codeBlockMatch) {
+    candidate = codeBlockMatch[1].trim();
+  }
+
+  const firstBrace = candidate.indexOf("{");
+  const lastBrace = candidate.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+    candidate = candidate.slice(firstBrace, lastBrace + 1);
+  }
+
+  return candidate;
 }
 
 function normalizePlanPayload(payload: unknown) {

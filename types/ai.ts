@@ -162,6 +162,8 @@ export type AssistantMessagePayload = {
       description?: string;
     }>;
   };
+  requiresConfirmation?: boolean;
+  plan?: AiPlan;
 };
 
 export type ExecuteAiResponse = {
@@ -173,4 +175,6 @@ export type ExecuteAiRequest = {
   history?: ConversationHistoryEntry[];
   connectionParam?: string;
   connectionString?: string;
+  confirm?: boolean;
+  plan?: AiPlan;
 };
