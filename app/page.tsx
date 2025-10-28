@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Github } from "lucide-react";
+import Link from "next/link";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,7 +69,18 @@ export default function Home() {
             <span className="text-xs text-muted-foreground">Share context, not chaos</span>
           </div>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
+          <Link
+            href="https://github.com/rayenfassatoui/NeonSchemaPilot"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            aria-label="View Neon Schema Pilot on GitHub"
+          >
+            <Github className="h-5 w-5" aria-hidden="true" />
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-16 px-6 pb-20">
         <section className="grid gap-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
