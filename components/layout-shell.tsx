@@ -17,7 +17,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      {showNavbar ? <SiteNavbar /> : null}
+      {showNavbar ? (
+        <React.Suspense fallback={null}>
+          <SiteNavbar />
+        </React.Suspense>
+      ) : null}
       <main className={cn("flex-1", showNavbar ? "pb-16 pt-28" : "")}>{children}</main>
     </div>
   );
