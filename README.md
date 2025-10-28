@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
 
-## Getting Started
+# Neon Schema Pilot
 
-First, run the development server:
+Schema-first database explorer for Neon projects. Connect a Neon URL, visualize table relations, inspect sample data, and jump between visual, tabular, and SQL views without leaving the browser.
+
+</div>
+
+## Features
+
+- Visual database canvas with draggable tables and relation highlights
+- Dedicated tables view with column metadata and sample row explorer
+- SQL preview generated from the live schema snapshot
+- Floating, draggable navbar that preserves the active connection string
+- Neon API integration via serverless routes for describe and table data fetching
+
+## Prerequisites
+
+- [Bun](https://bun.sh/) 1.1 or newer (preferred runtime)
+- Node.js 18+ if you plan to run with `npm`/`pnpm`
+- A Neon connection string with read access (e.g. `postgresql://user:pass@host/db`)
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+# install dependencies
+bun install
+
+# run the dev server
 bun dev
+
+# optional: lint and type-check
+bun run lint
+bunx tsc --noEmit
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` to use the interface. From the landing page, click **Connect with Neon URL**, paste your connection string, and you will be redirected to the database workspace with your schema snapshot.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment & Connection Notes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Connection strings are passed around the app via the `connection` search param (base64 encoded). The navbar keeps this param on internal navigation so the same database context persists.
+- Server-side routes live in `app/api/neon/**`. The `describe` route ingests schema metadata; the `table-data` route returns sample rows. Review these handlers before deploying to production.
+- No `.env` file is required by default, but you can add one and read from `process.env` in the API routes if you want to hide credentials locally.
 
-## Learn More
+## Production Build
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun run build
+bun run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The build uses Next.js 16 with Turbopack. Ensure any client components that call `useSearchParams` or other browser-only hooks remain wrapped in a `<Suspense>` boundary (see `components/layout-shell.tsx`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure Highlights
 
-## Deploy on Vercel
+- `app/database/` – routed layouts for Visual, Tables, and SQL views
+- `components/database-diagram/**` – canvas rendering primitives
+- `app/api/neon/` – serverless routes that proxy Neon APIs
+- `components/site-navbar.tsx` – floating navigation shared across pages
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The project works well on Vercel or any platform that supports Next.js App Router with Node runtime. Remember to configure your Neon connection string as an environment variable or use secure connection sharing before deploying.
+
+---
+
+Need help? File an issue or ping the maintainer with details about your Neon setup and reproduction steps.

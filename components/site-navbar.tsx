@@ -246,7 +246,7 @@ export function SiteNavbar() {
                   DB
                 </button>
                 <div className="leading-tight">
-                  <p className="text-sm font-semibold tracking-tight">Neon Flowwork</p>
+                  <p className="text-sm font-semibold tracking-tight">Neon Schema Pilot</p>
                   <p className="text-xs text-muted-foreground">Crafting clarity for complex schemas</p>
                 </div>
               </div>
