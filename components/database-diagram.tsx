@@ -51,9 +51,10 @@ type DatabaseDiagramProps = {
   relations: RelationEdge[];
   focus?: DiagramFocus | null;
   onTableFocus?: (id: string) => void;
+  showRelationLines?: boolean;
 };
 
-export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: DatabaseDiagramProps) {
+export function DatabaseDiagram({ tables, relations, focus, onTableFocus, showRelationLines = true }: DatabaseDiagramProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const cardRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
   const dragState = React.useRef<{
@@ -81,6 +82,7 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: Data
   );
   const [cardSizes, setCardSizes] = React.useState<SizeMap>({});
   const [canvasSize, setCanvasSize] = React.useState({ width: 1200, height: 800 });
+  const [columnOffsets, setColumnOffsets] = React.useState<Record<string, number>>({});
 
   const defaultHeight = React.useMemo(() => {
     if (!tables.length) return 480;
@@ -388,6 +390,23 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: Data
     }
   }, []);
 
+  const registerColumnOffset = React.useCallback((columnKey: string, offset: number | null) => {
+    setColumnOffsets((prev) => {
+      if (offset == null) {
+        if (!(columnKey in prev)) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[columnKey];
+        return next;
+      }
+      if (prev[columnKey] === offset) {
+        return prev;
+      }
+      return { ...prev, [columnKey]: offset };
+    });
+  }, []);
+
   const referencingColumns = React.useMemo(() => {
     if (focus?.sourceColumns) {
       return focus.sourceColumns;
@@ -437,7 +456,7 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: Data
     };
   }, [tables, positions, cardSizes, canvasSize.width, canvasSize.height]);
 
-  const lines = React.useMemo<DiagramLine[]>(() => {
+  const computedLines = React.useMemo<DiagramLine[]>(() => {
     return relations
       .map((relation) => {
         const sourceId = `${relation.source.schema}.${relation.source.table}`;
@@ -457,17 +476,48 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: Data
 
         const id = `${relation.constraintName}-${sourceId}-${targetId}`;
 
+        const sourceColumnKey = `${relation.source.schema}.${relation.source.table}.${relation.source.column}`;
+        const targetColumnKey = relation.target.column
+          ? `${relation.target.schema}.${relation.target.table}.${relation.target.column}`
+          : null;
+
+        const sourceOffset = columnOffsets[sourceColumnKey];
+        const targetOffset = targetColumnKey ? columnOffsets[targetColumnKey] : undefined;
+
+        const isRightward = sourcePos.x <= targetPos.x;
+        const horizontalPadding = 12;
+
+        const x1 = isRightward
+          ? sourcePos.x + sourceSize.width + horizontalPadding
+          : sourcePos.x - horizontalPadding;
+        const y1 = sourcePos.y + (sourceOffset ?? sourceSize.height / 2);
+
+        const x2 = isRightward
+          ? targetPos.x - horizontalPadding
+          : targetPos.x + targetSize.width + horizontalPadding;
+        const y2 = targetPos.y + (targetOffset ?? targetSize.height / 2);
+
         return {
           id,
-          x1: sourcePos.x + sourceSize.width / 2,
-          y1: sourcePos.y + sourceSize.height / 2,
-          x2: targetPos.x + targetSize.width / 2,
-          y2: targetPos.y + targetSize.height / 2,
+          x1,
+          y1,
+          x2,
+          y2,
           highlighted: focus?.relationIds?.has(id) ?? false,
         };
       })
       .filter(Boolean) as DiagramLine[];
-  }, [relations, positions, cardSizes, focus?.relationIds]);
+  }, [relations, positions, cardSizes, focus?.relationIds, columnOffsets]);
+
+  const lines = React.useMemo<DiagramLine[]>(
+    () => (showRelationLines ? computedLines : []),
+    [computedLines, showRelationLines]
+  );
+
+  const relationSummary = React.useMemo(
+    () => ({ total: relations.length, potential: computedLines.length, visible: lines.length }),
+    [relations.length, computedLines.length, lines.length]
+  );
 
   return (
     <div
@@ -482,6 +532,24 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: Data
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,theme(colors.border/10),transparent_65%)]" />
 
+      <div className="pointer-events-none absolute right-4 top-4 z-20 flex flex-col items-end gap-2 text-xs">
+        <span className="rounded-full border border-border/50 bg-background/90 px-3 py-1 font-medium text-muted-foreground shadow-sm">
+          {showRelationLines
+            ? `${relationSummary.visible} / ${relationSummary.total} relation${relationSummary.total === 1 ? "" : "s"}`
+            : `Lines hidden · ${relationSummary.potential} ready`}
+        </span>
+        {relationSummary.total > 0 && relationSummary.potential > 0 && !showRelationLines ? (
+          <span className="max-w-[220px] rounded-lg border border-border/50 bg-background/95 px-3 py-2 text-[11px] text-muted-foreground shadow-sm">
+            Relation endpoints stay highlighted while connectors are hidden.
+          </span>
+        ) : null}
+        {relationSummary.total > 0 && relationSummary.potential === 0 && relationSummary.visible === 0 ? (
+          <span className="max-w-[220px] rounded-lg border border-primary/40 bg-background/95 px-3 py-2 text-[11px] text-primary shadow-sm">
+            Relations were detected but no connectors could be drawn yet. Try refreshing, or verify the snapshot includes column names for each foreign key.
+          </span>
+        ) : null}
+      </div>
+
       <ZoomControls onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} onReset={handleResetView} />
 
       <DiagramBoard
@@ -491,6 +559,7 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: Data
         tables={tables}
         positions={positions}
         registerCard={registerCard}
+        registerColumnOffset={registerColumnOffset}
         activeId={activeId}
         referencingColumns={referencingColumns}
         referencedColumns={referencedColumns}

@@ -14,6 +14,7 @@ type DiagramBoardProps = {
   tables: TableInfo[];
   positions: Positions;
   registerCard: (id: string) => (node: HTMLDivElement | null) => void;
+  registerColumnOffset: (columnKey: string, offset: number | null) => void;
   activeId: string | null;
   referencingColumns: Set<string>;
   referencedColumns: Set<string>;
@@ -31,6 +32,7 @@ export function DiagramBoard({
   tables,
   positions,
   registerCard,
+  registerColumnOffset,
   activeId,
   referencingColumns,
   referencedColumns,
@@ -71,6 +73,7 @@ export function DiagramBoard({
               highlighted={highlighted}
               dimmed={dimmed}
               registerCard={registerCard}
+              registerColumnOffset={registerColumnOffset}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerEnd={onPointerEnd}

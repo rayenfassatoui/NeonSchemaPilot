@@ -5,6 +5,7 @@ import * as React from "react";
 import { DatabaseDiagram } from "@/components/database-diagram";
 import { tableKey } from "@/components/database-diagram/types";
 import type { RelationEdge, TableInfo } from "@/types/neon";
+import { Button } from "@/components/ui/button";
 
 import { RelationExplorer } from "./relation-explorer";
 
@@ -15,6 +16,7 @@ type VisualExplorerProps = {
 
 export function VisualExplorer({ tables, relations }: VisualExplorerProps) {
   const [selectedTableId, setSelectedTableId] = React.useState(() => tables[0]?.schema ? tableKey(tables[0]) : "");
+  const [showRelations, setShowRelations] = React.useState(true);
 
   const tableIds = React.useMemo(() => tables.map((table) => tableKey(table)), [tables]);
 
@@ -88,11 +90,29 @@ export function VisualExplorer({ tables, relations }: VisualExplorerProps) {
               Use drag, pan, or wheel zoom to sculpt the diagram. Your layout is kept per schema snapshot.
             </p>
           </div>
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">
-            {relations.length} relation{relations.length === 1 ? "" : "s"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              {relations.length} relation{relations.length === 1 ? "" : "s"}
+            </span>
+            {relations.length ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRelations((prev) => !prev)}
+                className="text-xs"
+              >
+                {showRelations ? "Hide lines" : "Show lines"}
+              </Button>
+            ) : null}
+          </div>
         </div>
-        <DatabaseDiagram tables={tables} relations={relations} focus={focus} onTableFocus={handleTableFocus} />
+        <DatabaseDiagram
+          tables={tables}
+          relations={relations}
+          focus={focus}
+          onTableFocus={handleTableFocus}
+          showRelationLines={showRelations}
+        />
       </section>
       {relations.length ? (
         <RelationExplorer

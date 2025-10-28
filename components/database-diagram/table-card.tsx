@@ -11,6 +11,7 @@ type TableCardProps = {
   highlighted: boolean;
   dimmed: boolean;
   registerCard: (id: string) => (node: HTMLDivElement | null) => void;
+  registerColumnOffset: (columnKey: string, offset: number | null) => void;
   onPointerDown: (id: string) => (event: React.PointerEvent<HTMLDivElement>) => void;
   onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
   onPointerEnd: (event: React.PointerEvent<HTMLDivElement>) => void;
@@ -26,6 +27,7 @@ export const TableCard = React.memo(function TableCard({
   highlighted,
   dimmed,
   registerCard,
+  registerColumnOffset,
   onPointerDown,
   onPointerMove,
   onPointerEnd,
@@ -33,7 +35,58 @@ export const TableCard = React.memo(function TableCard({
   referencedColumns,
 }: TableCardProps) {
   const assignRef = React.useMemo(() => registerCard(id), [registerCard, id]);
-  const columnsToRender = React.useMemo(() => table.columns.slice(0, 12), [table.columns]);
+  const columnRefs = React.useRef(new Map<string, HTMLDivElement>());
+
+  const updateColumnOffsets = React.useCallback(() => {
+    columnRefs.current.forEach((node, columnKey) => {
+      const offset = node.offsetTop + node.offsetHeight / 2;
+      registerColumnOffset(columnKey, offset);
+    });
+  }, [registerColumnOffset]);
+
+  const handleColumnRef = React.useCallback(
+    (columnKey: string) => (node: HTMLDivElement | null) => {
+      if (!node) {
+        columnRefs.current.delete(columnKey);
+        registerColumnOffset(columnKey, null);
+        return;
+      }
+      columnRefs.current.set(columnKey, node);
+      const offset = node.offsetTop + node.offsetHeight / 2;
+      registerColumnOffset(columnKey, offset);
+    },
+    [registerColumnOffset]
+  );
+
+  React.useLayoutEffect(() => {
+    updateColumnOffsets();
+  });
+
+  const columnsToRender = React.useMemo(() => {
+    const limit = 12;
+    const important: TableInfo["columns"] = [];
+    const extras: TableInfo["columns"] = [];
+    const seen = new Set<string>();
+
+    table.columns.forEach((column) => {
+      const key = `${table.schema}.${table.name}.${column.name}`;
+      if ((referencingColumns.has(key) || referencedColumns.has(key)) && !seen.has(column.name)) {
+        important.push(column);
+        seen.add(column.name);
+      }
+    });
+
+    const extrasLimit = Math.max(0, limit - important.length);
+
+    table.columns.forEach((column) => {
+      if (extras.length >= extrasLimit) return;
+      if (seen.has(column.name)) return;
+      extras.push(column);
+      seen.add(column.name);
+    });
+
+    return extrasLimit ? [...important, ...extras] : important;
+  }, [referencedColumns, referencingColumns, table.columns, table.name, table.schema]);
 
   return (
     <div
@@ -77,6 +130,7 @@ export const TableCard = React.memo(function TableCard({
               return (
                 <div
                   key={column.name}
+                  ref={handleColumnRef(columnKey)}
                   className={cn(
                     "flex items-center justify-between gap-3 rounded-lg border border-transparent bg-transparent px-2 py-1 transition-colors",
                     isSource && "border-primary/30 bg-primary/10",
