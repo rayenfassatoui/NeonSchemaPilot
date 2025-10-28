@@ -1,8 +1,8 @@
 <div align="center">
 
-# Neon Schema Pilot
+# MyDatabase Studio
 
-Schema-first database explorer for Neon projects. Connect a Neon URL, visualize table relations, inspect sample data, and jump between visual, tabular, and SQL views without leaving the browser.
+Humanized database exploration for file-backed workspaces and Neon clusters. Blend AI-assisted schema editing with visual, tabular, and SQL-first views without leaving the browser.
 
 <img src="./public/home.png" alt="Neon Schema Pilot landing page" width="960" />
 
@@ -10,6 +10,7 @@ Schema-first database explorer for Neon projects. Connect a Neon URL, visualize 
 
 ## Features
 
+- Gemini-powered assistant that plans and executes DDL, DML, DQL, and DCL against a file-based datastore
 - Visual database canvas with draggable tables and relation highlights
 - Dedicated tables view with column metadata and sample row explorer
 - SQL preview generated from the live schema snapshot
@@ -42,7 +43,8 @@ Open `http://localhost:3000` to use the interface. From the landing page, click 
 
 - Connection strings are passed around the app via the `connection` search param (base64 encoded). The navbar keeps this param on internal navigation so the same database context persists.
 - Server-side routes live in `app/api/neon/**`. The `describe` route ingests schema metadata; the `table-data` route returns sample rows. Review these handlers before deploying to production.
-- No `.env` file is required by default, but you can add one and read from `process.env` in the API routes if you want to hide credentials locally.
+- The AI workspace requires a Gemini API key. Create a `.env.local` file and set `GEMINI_API_KEY=your_key_here` before running the dev server. The key is read only on the server.
+- The file-backed datastore persists to `data/database.json`. The file is created automatically the first time you interact with the assistant.
 
 ## Production Build
 

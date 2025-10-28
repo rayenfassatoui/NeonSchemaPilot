@@ -16,6 +16,7 @@ type NavHighlight = {
 };
 
 const ROUTE_HIGHLIGHTS: NavHighlight[] = [
+  { label: "AI studio", href: "/ai", hint: "Assistant" },
   { label: "Visual layout", href: "/database/visual", hint: "Canvas" },
   { label: "Tables view", href: "/database/tables", hint: "Ledger" },
   { label: "SQL preview", href: "/database/sql", hint: "Snapshot" },
@@ -246,8 +247,8 @@ export function SiteNavbar() {
                   DB
                 </button>
                 <div className="leading-tight">
-                  <p className="text-sm font-semibold tracking-tight">Neon Schema Pilot</p>
-                  <p className="text-xs text-muted-foreground">Crafting clarity for complex schemas</p>
+                  <p className="text-sm font-semibold tracking-tight">MyDatabase Studio</p>
+                  <p className="text-xs text-muted-foreground">Humanized tooling for AI-shaped schemas</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
