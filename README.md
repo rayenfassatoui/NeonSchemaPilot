@@ -4,6 +4,8 @@
 
 Schema-first database explorer for Neon projects. Connect a Neon URL, visualize table relations, inspect sample data, and jump between visual, tabular, and SQL views without leaving the browser.
 
+<img src="./public/home.png" alt="Neon Schema Pilot landing page" width="960" />
+
 </div>
 
 ## Features
