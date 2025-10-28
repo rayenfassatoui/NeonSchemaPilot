@@ -65,13 +65,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
     }
 
-    const database = new FileDatabase(DATABASE_PATH);
-    await database.load();
-
     const decodedConnection =
       payload.connectionString?.trim() ?? decodeConnection(payload.connectionParam);
     const connectionString =
       decodedConnection && isValidConnectionString(decodedConnection) ? decodedConnection : null;
+
+    const warnings = new Set<string>();
+    if (decodedConnection && !connectionString) {
+      warnings.add(
+        "Connection string couldn't be validated; ran operations against the local snapshot only.",
+      );
+    }
+
+    let replicator: NeonOperationReplicator | undefined;
+
+    if (connectionString) {
+      try {
+        replicator = await NeonOperationReplicator.create(connectionString);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : "Unable to connect to Neon.";
+        warnings.add(detail);
+        replicator = undefined;
+      }
+    }
+
+    const database = new FileDatabase(DATABASE_PATH);
+    await database.load(replicator ? { replicator } : undefined);
 
     const digest = database.getPromptDigest();
 
@@ -82,20 +101,8 @@ export async function POST(request: NextRequest) {
     });
 
     const results: OperationExecution[] = [];
-    const warnings = new Set(plan.warnings ?? []);
-    if (decodedConnection && !connectionString) {
-      warnings.add("Connection string couldn't be validated; ran operations against the local snapshot only.");
-    }
-  let replicator: NeonOperationReplicator | undefined;
-
-    if (connectionString) {
-      try {
-        replicator = await NeonOperationReplicator.create(connectionString);
-      } catch (error) {
-        const detail = error instanceof Error ? error.message : "Unable to connect to Neon.";
-        warnings.add(detail);
-        replicator = undefined;
-      }
+    for (const warning of plan.warnings ?? []) {
+      warnings.add(warning);
     }
 
     let operationFailed = false;
@@ -144,7 +151,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (operationFailed) {
-      await database.load();
+      await database.load(replicator ? { replicator } : undefined);
     }
 
     await database.save();

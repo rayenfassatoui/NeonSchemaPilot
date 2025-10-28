@@ -29,6 +29,7 @@ export type DatabaseTable = {
   columnOrder: string[];
   permissions: Record<string, TablePermission>;
   rows: Array<Record<string, unknown>>;
+  rowCount?: number;
   createdAt: string;
   updatedAt: string;
 };

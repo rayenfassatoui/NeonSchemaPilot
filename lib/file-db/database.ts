@@ -43,7 +43,20 @@ export class FileDatabase {
 
   constructor(private readonly filePath: string) {}
 
-  async load() {
+  async load(options?: { replicator?: OperationReplicator }) {
+    const replicator = options?.replicator;
+
+    if (replicator) {
+      try {
+        const snapshot = await replicator.snapshot();
+        this.data = snapshot;
+        this.dirty = false;
+        return;
+      } catch (error) {
+        console.warn("Failed to hydrate from Neon; falling back to local snapshot.", error);
+      }
+    }
+
     try {
       const raw = await readFile(this.filePath, "utf8");
       this.data = JSON.parse(raw) as DatabaseFile;

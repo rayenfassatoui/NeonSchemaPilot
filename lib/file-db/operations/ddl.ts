@@ -80,6 +80,7 @@ export async function executeCreateTable(
     columnOrder,
     permissions: {},
     rows: [],
+    rowCount: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -136,7 +137,7 @@ export async function executeDropTable(
     type: operation.type,
     category: "DDL",
     status: "success",
-    detail: `Dropped table "${operation.table}" (removed ${table.rows.length} row(s)).`,
+    detail: `Dropped table "${operation.table}" (removed ${(table.rowCount ?? table.rows.length)} row(s)).`,
   };
 }
 

@@ -38,20 +38,33 @@ export async function executeInsert(
       if (candidate === undefined || candidate === null) {
         throw new Error(`Primary key column "${primaryKey}" requires a value.`);
       }
-      const duplicate = table.rows.find((entry) => entry[primaryKey] === candidate);
-      if (duplicate) {
-        throw new Error(`Duplicate primary key value detected for column "${primaryKey}".`);
+      const duplicateInBatch = inserted.find((entry) => entry[primaryKey] === candidate);
+      if (duplicateInBatch) {
+        throw new Error(`Duplicate primary key value detected for column "${primaryKey}" within the same insert batch.`);
+      }
+      if (!replicator) {
+        const duplicateExisting = table.rows.find((entry) => entry[primaryKey] === candidate);
+        if (duplicateExisting) {
+          throw new Error(`Duplicate primary key value detected for column "${primaryKey}".`);
+        }
       }
     }
 
     inserted.push(record);
   }
 
+  let insertedCount = inserted.length;
+
   if (replicator) {
-    await replicator.insert(table, inserted);
+    const result = await replicator.insert(table, inserted);
+    insertedCount = result.inserted;
+    const startingCount = table.rowCount ?? table.rows.length;
+    table.rowCount = startingCount + insertedCount;
+  } else {
+    table.rows.push(...inserted);
+    table.rowCount = table.rows.length;
   }
 
-  table.rows.push(...inserted);
   table.updatedAt = nowIso();
   markDirty();
 
@@ -60,7 +73,7 @@ export async function executeInsert(
     type: operation.type,
     category: "DML",
     status: "success",
-    detail: `Inserted ${inserted.length} row(s) into "${operation.table}".`,
+    detail: `Inserted ${insertedCount} row(s) into "${operation.table}".`,
   };
 }
 
@@ -75,9 +88,6 @@ export async function executeUpdate(
     throw new Error("Update operation requires at least one field to change.");
   }
 
-  const predicate = buildPredicate(operation.criteria);
-  const matchedRows = table.rows.filter((row) => predicate(row));
-
   const coercedChanges: Record<string, unknown> = {};
   for (const [key, raw] of Object.entries(operation.changes)) {
     const column = table.columns[key];
@@ -87,13 +97,19 @@ export async function executeUpdate(
     coercedChanges[key] = coerceValue(column, raw);
   }
 
-  if (replicator) {
-    await replicator.update(table, operation.criteria ?? [], coercedChanges);
-  }
+  let affected = 0;
 
-  for (const row of matchedRows) {
-    for (const [key, value] of Object.entries(coercedChanges)) {
-      row[key] = value;
+  if (replicator) {
+    const result = await replicator.update(table, operation.criteria ?? [], coercedChanges);
+    affected = result.affected;
+  } else {
+    const predicate = buildPredicate(operation.criteria);
+    for (const row of table.rows) {
+      if (!predicate(row)) continue;
+      for (const [key, value] of Object.entries(coercedChanges)) {
+        row[key] = value;
+      }
+      affected += 1;
     }
   }
 
@@ -105,7 +121,7 @@ export async function executeUpdate(
     type: operation.type,
     category: "DML",
     status: "success",
-    detail: `Updated ${matchedRows.length} row(s) on "${operation.table}".`,
+    detail: `Updated ${affected} row(s) on "${operation.table}".`,
   };
 }
 
@@ -115,16 +131,22 @@ export async function executeDelete(
 ): Promise<OperationExecution> {
   const { markDirty, requireTable, replicator } = context;
   const table = requireTable(operation.table);
-  const predicate = buildPredicate(operation.criteria);
 
-  const survivors = table.rows.filter((row) => !predicate(row));
-  const removed = table.rows.length - survivors.length;
+  let removed = 0;
 
   if (replicator) {
-    await replicator.delete(table, operation.criteria ?? []);
+    const result = await replicator.delete(table, operation.criteria ?? []);
+    removed = result.removed;
+    const startingCount = table.rowCount ?? table.rows.length;
+    table.rowCount = Math.max(0, startingCount - removed);
+  } else {
+    const predicate = buildPredicate(operation.criteria);
+    const survivors = table.rows.filter((row) => !predicate(row));
+    removed = table.rows.length - survivors.length;
+    table.rows = survivors;
+    table.rowCount = table.rows.length;
   }
 
-  table.rows = survivors;
   table.updatedAt = nowIso();
   markDirty();
 

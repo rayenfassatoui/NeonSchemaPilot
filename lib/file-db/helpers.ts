@@ -1,13 +1,13 @@
 import type {
-    CriteriaCondition,
-    OperationExecution,
+  CriteriaCondition,
+  OperationExecution,
 } from "@/types/ai";
 import type {
-    DatabaseFile,
-    DatabaseTable,
-    DatabaseTableSummary,
-    Privilege,
-    TableColumnDefinition,
+  DatabaseFile,
+  DatabaseTable,
+  DatabaseTableSummary,
+  Privilege,
+  TableColumnDefinition,
 } from "@/types/file-db";
 
 import { ALLOWED_PRIVILEGES } from "./constants";
@@ -146,7 +146,7 @@ export function summarizeTable(table: DatabaseTable): DatabaseTableSummary {
     description: table.description,
     primaryKey: table.primaryKey,
     columnCount: table.columnOrder.length,
-    rowCount: table.rows.length,
+    rowCount: table.rowCount ?? table.rows.length,
     updatedAt: table.updatedAt,
     columns: table.columnOrder.map((columnName) => table.columns[columnName]),
     permissions: Object.values(table.permissions).map((permission) => ({
@@ -164,8 +164,9 @@ export function formatPromptDigest(state: DatabaseFile, maxRows = 2) {
     lines.push("No tables are currently defined.");
   } else {
     for (const table of tables) {
+      const rowCount = table.rowCount ?? table.rows.length;
       lines.push(
-        `Table "${table.name}" (${table.rows.length} row(s), ${table.columnOrder.length} column(s))`,
+        `Table "${table.name}" (${rowCount} row(s), ${table.columnOrder.length} column(s))`,
       );
       if (table.description) {
         lines.push(`  Description: ${table.description}`);

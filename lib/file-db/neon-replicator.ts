@@ -10,7 +10,11 @@ import type {
     DqlSelectOperation,
     QueryResultSet,
 } from "@/types/ai";
-import type { DatabaseTable, Privilege, TableColumnDefinition } from "@/types/file-db";
+import type { DatabaseFile, DatabaseTable, Privilege, TableColumnDefinition } from "@/types/file-db";
+
+import { DEFAULT_DB_VERSION } from "./constants";
+import { nowIso } from "./helpers";
+import { describeDatabase } from "../neon";
 
 import type { OperationReplicator } from "./operations/types";
 
@@ -26,14 +30,16 @@ export class NeonOperationReplicator implements OperationReplicator {
   static async create(connectionString: string, schema = "public") {
     const client = neon(connectionString, { fullResults: true }) as NeonClient;
     await client`select 1`;
-    return new NeonOperationReplicator(client, schema);
+    return new NeonOperationReplicator(connectionString, client, schema);
   }
 
+  private readonly connectionString: string;
   private readonly schema: string;
   private readonly sql: NeonClient;
   private inTransaction = false;
 
-  private constructor(sql: NeonClient, schema: string) {
+  private constructor(connectionString: string, sql: NeonClient, schema: string) {
+    this.connectionString = connectionString;
     this.sql = sql;
     this.schema = schema;
   }
@@ -84,7 +90,9 @@ export class NeonOperationReplicator implements OperationReplicator {
   }
 
   async insert(table: DatabaseTable, rows: Array<Record<string, unknown>>) {
-    if (!rows.length) return;
+    if (!rows.length) {
+      return { inserted: 0 };
+    }
 
     const columns = table.columnOrder;
     const columnList = columns.map(quoteIdentifier).join(", ");
@@ -100,8 +108,14 @@ export class NeonOperationReplicator implements OperationReplicator {
       }
     }
 
-      const statement = `INSERT INTO ${this.tableIdentifier(table.name)} (${columnList}) VALUES ${valueClauses.join(", ")}`;
-    await this.sql.query(statement, values);
+    if (!valueClauses.length) {
+      return { inserted: 0 };
+    }
+
+    const statement = `INSERT INTO ${this.tableIdentifier(table.name)} (${columnList}) VALUES ${valueClauses.join(", ")} RETURNING 1`;
+    const result = (await this.sql.query(statement, values)) as FullQueryResults<false>;
+    const inserted = typeof result.rowCount === "number" ? result.rowCount : result.rows.length;
+    return { inserted };
   }
 
   async update(
@@ -111,7 +125,7 @@ export class NeonOperationReplicator implements OperationReplicator {
   ) {
     const changeEntries = Object.entries(changes);
     if (!changeEntries.length) {
-      return;
+      return { affected: 0 };
     }
 
     const setParts: string[] = [];
@@ -127,14 +141,18 @@ export class NeonOperationReplicator implements OperationReplicator {
     const where = buildWhereClause(criteria, index);
     values.push(...where.params);
 
-      const statement = `UPDATE ${this.tableIdentifier(table.name)} SET ${setParts.join(", ")}${where.clause}`;
-    await this.sql.query(statement, values);
+    const statement = `UPDATE ${this.tableIdentifier(table.name)} SET ${setParts.join(", ")}${where.clause} RETURNING 1`;
+    const result = (await this.sql.query(statement, values)) as FullQueryResults<false>;
+    const affected = typeof result.rowCount === "number" ? result.rowCount : result.rows.length;
+    return { affected };
   }
 
   async delete(table: DatabaseTable, criteria: CriteriaCondition[]) {
     const where = buildWhereClause(criteria, 1);
-      const statement = `DELETE FROM ${this.tableIdentifier(table.name)}${where.clause}`;
-    await this.sql.query(statement, where.params);
+    const statement = `DELETE FROM ${this.tableIdentifier(table.name)}${where.clause} RETURNING 1`;
+    const result = (await this.sql.query(statement, where.params)) as FullQueryResults<false>;
+    const removed = typeof result.rowCount === "number" ? result.rowCount : result.rows.length;
+    return { removed };
   }
 
   async select(table: DatabaseTable, operation: DqlSelectOperation): Promise<QueryResultSet> {
@@ -174,6 +192,93 @@ export class NeonOperationReplicator implements OperationReplicator {
       rows,
       rowCount: total,
       limit,
+    };
+  }
+
+  async snapshot(): Promise<DatabaseFile> {
+    const description = await describeDatabase(this.connectionString);
+    const now = nowIso();
+    const tables: Record<string, DatabaseTable> = {};
+
+    for (const table of description.snapshot.tables) {
+      const qualifiedName = table.schema === this.schema ? table.name : `${table.schema}.${table.name}`;
+      const columnOrder = table.columns.map((column) => column.name);
+      const columns: Record<string, TableColumnDefinition> = {};
+      for (const column of table.columns) {
+        columns[column.name] = {
+          name: column.name,
+          dataType: column.dataType,
+          nullable: column.nullable,
+          defaultValue: column.defaultValue ?? undefined,
+          isPrimaryKey: false,
+        };
+      }
+
+      let sampleRows: Array<Record<string, unknown>> = [];
+      let rowCount = 0;
+
+      try {
+        const sampleQuery = `SELECT * FROM ${quoteIdentifier(table.schema)}.${quoteIdentifier(table.name)} LIMIT 5`;
+        const rowsResult = (await this.sql.query(sampleQuery)) as FullQueryResults<false>;
+        sampleRows = rowsResult.rows.map((row) => {
+          const entry: Record<string, unknown> = {};
+          for (const columnName of columnOrder) {
+            entry[columnName] = (row as Record<string, unknown>)[columnName];
+          }
+          return entry;
+        });
+
+        const countQuery = `SELECT COUNT(*)::bigint AS total FROM ${quoteIdentifier(table.schema)}.${quoteIdentifier(table.name)}`;
+        const countResult = (await this.sql.query(countQuery)) as FullQueryResults<false>;
+        const totalCandidate = countResult.rows[0]?.total;
+        if (typeof totalCandidate === "bigint") {
+          rowCount = Number(totalCandidate);
+        } else if (typeof totalCandidate === "number") {
+          rowCount = totalCandidate;
+        } else if (typeof totalCandidate === "string") {
+          const parsed = Number(totalCandidate);
+          rowCount = Number.isNaN(parsed) ? 0 : parsed;
+        } else if (typeof rowsResult.rowCount === "number") {
+          rowCount = rowsResult.rowCount;
+        } else {
+          rowCount = rowsResult.rows.length;
+        }
+      } catch (error) {
+        console.warn(`Failed to sample table ${table.schema}.${table.name}`, error);
+        sampleRows = [];
+        rowCount = 0;
+      }
+
+      tables[qualifiedName] = {
+        name: qualifiedName,
+        description: undefined,
+        primaryKey: undefined,
+        columns,
+        columnOrder,
+        permissions: {},
+        rows: sampleRows,
+        rowCount,
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+
+    return {
+      meta: {
+        version: DEFAULT_DB_VERSION,
+        revision: 0,
+        createdAt: now,
+        updatedAt: now,
+      },
+      tables,
+      roles: {
+        admin: {
+          name: "admin",
+          description: "Full access to every table and privilege.",
+          createdAt: now,
+          updatedAt: now,
+        },
+      },
     };
   }
 

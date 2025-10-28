@@ -6,16 +6,17 @@ export interface OperationReplicator {
   dropTable(operation: DdlDropTableOperation, table: DatabaseTable): Promise<void>;
   addColumn(operation: DdlAddColumnOperation, column: TableColumnDefinition): Promise<void>;
   dropColumn(operation: DdlDropColumnOperation, table: DatabaseTable): Promise<void>;
-  insert(table: DatabaseTable, rows: Array<Record<string, unknown>>): Promise<void>;
+  insert(table: DatabaseTable, rows: Array<Record<string, unknown>>): Promise<{ inserted: number }>;
   update(
     table: DatabaseTable,
     criteria: CriteriaCondition[],
     changes: Record<string, unknown>,
-  ): Promise<void>;
-  delete(table: DatabaseTable, criteria: CriteriaCondition[]): Promise<void>;
+  ): Promise<{ affected: number }>;
+  delete(table: DatabaseTable, criteria: CriteriaCondition[]): Promise<{ removed: number }>;
   select(table: DatabaseTable, operation: DqlSelectOperation): Promise<QueryResultSet>;
   grant(table: DatabaseTable, roleName: string, privileges: Privilege[], description?: string): Promise<void>;
   revoke(table: DatabaseTable, roleName: string, privileges: Privilege[]): Promise<void>;
+  snapshot(): Promise<DatabaseFile>;
 }
 
 export interface OperationContext {
