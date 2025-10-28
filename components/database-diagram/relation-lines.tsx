@@ -12,6 +12,8 @@ export function RelationLines({ lines, width, height }: RelationLinesProps) {
     return null;
   }
 
+  const hasHighlight = lines.some((line) => line.highlighted);
+
   return (
     <svg
       className="pointer-events-none absolute left-0 top-0"
@@ -34,7 +36,13 @@ export function RelationLines({ lines, width, height }: RelationLinesProps) {
             x2={line.x2}
             y2={line.y2}
             markerEnd="url(#diagram-arrow)"
-            className="opacity-70"
+            className={
+              line.highlighted
+                ? "opacity-100"
+                : hasHighlight
+                  ? "opacity-20 transition-opacity"
+                  : "opacity-70"
+            }
           />
         ))}
       </g>

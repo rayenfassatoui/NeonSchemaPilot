@@ -1,5 +1,6 @@
 import { DatabaseErrorState } from "../_components/database-error-state";
 import { DatabaseSummaryHeader } from "../_components/database-summary-header";
+import { TableDataExplorer } from "../_components/table-data-explorer";
 import { loadDatabaseContext } from "../_lib/context";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export default async function TablesViewPage({ searchParams }: TablesViewPagePro
     return <DatabaseErrorState message={context.message} />;
   }
 
-  const { snapshot, connectionMeta } = context.data;
+  const { snapshot, connectionMeta, connectionParam } = context.data;
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -31,7 +32,9 @@ export default async function TablesViewPage({ searchParams }: TablesViewPagePro
           description="Scan column definitions, defaults, and nullability across the entire schema. Perfect when you need quick answers for migrations or API contracts."
         />
 
-        <section className="space-y-6">
+    <TableDataExplorer connectionParam={connectionParam} tables={snapshot.tables} />
+
+    <section className="space-y-6">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
             <div>
               <h2 className="text-2xl font-semibold">Tables overview</h2>

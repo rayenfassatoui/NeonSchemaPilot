@@ -17,6 +17,7 @@ type DiagramBoardProps = {
   activeId: string | null;
   referencingColumns: Set<string>;
   referencedColumns: Set<string>;
+  highlightedTables: Set<string> | null;
   onPointerDown: (id: string) => (event: React.PointerEvent<HTMLDivElement>) => void;
   onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
   onPointerEnd: (event: React.PointerEvent<HTMLDivElement>) => void;
@@ -33,11 +34,14 @@ export function DiagramBoard({
   activeId,
   referencingColumns,
   referencedColumns,
+  highlightedTables,
   onPointerDown,
   onPointerMove,
   onPointerEnd,
   fallbackMargin,
 }: DiagramBoardProps) {
+  const hasHighlight = highlightedTables != null && highlightedTables.size > 0;
+
   return (
     <div
       className="absolute inset-0"
@@ -54,6 +58,8 @@ export function DiagramBoard({
         {tables.map((table) => {
           const id = tableKey(table);
           const position = positions[id] ?? { x: fallbackMargin, y: fallbackMargin };
+          const highlighted = highlightedTables?.has(id) ?? false;
+          const dimmed = hasHighlight && !highlighted;
 
           return (
             <TableCard
@@ -62,6 +68,8 @@ export function DiagramBoard({
               table={table}
               position={position}
               active={activeId === id}
+              highlighted={highlighted}
+              dimmed={dimmed}
               registerCard={registerCard}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}

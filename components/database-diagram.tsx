@@ -5,10 +5,10 @@ import { DiagramBoard } from "./database-diagram/diagram-board";
 import { ZoomControls } from "./database-diagram/zoom-controls";
 import { tableKey } from "./database-diagram/types";
 import type {
-    DiagramLine,
-    Positions,
-    SizeMap,
-    ViewportState,
+  DiagramLine,
+  Positions,
+  SizeMap,
+  ViewportState,
 } from "./database-diagram/types";
 import type { RelationEdge, TableInfo } from "@/types/neon";
 
@@ -39,12 +39,21 @@ function buildInitialPositions(tables: TableInfo[]): Positions {
   return positions;
 }
 
+type DiagramFocus = {
+  tables: Set<string> | null;
+  sourceColumns: Set<string> | null;
+  targetColumns: Set<string> | null;
+  relationIds: Set<string> | null;
+};
+
 type DatabaseDiagramProps = {
   tables: TableInfo[];
   relations: RelationEdge[];
+  focus?: DiagramFocus | null;
+  onTableFocus?: (id: string) => void;
 };
 
-export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
+export function DatabaseDiagram({ tables, relations, focus, onTableFocus }: DatabaseDiagramProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const cardRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
   const dragState = React.useRef<{
@@ -329,10 +338,11 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
         translateY: viewport.y,
       };
 
+      onTableFocus?.(id);
       setActiveId(id);
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [positions, viewport.scale, viewport.x, viewport.y]
+    [positions, viewport.scale, viewport.x, viewport.y, onTableFocus]
   );
 
   const handlePointerMove = React.useCallback(
@@ -379,15 +389,21 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
   }, []);
 
   const referencingColumns = React.useMemo(() => {
+    if (focus?.sourceColumns) {
+      return focus.sourceColumns;
+    }
     const set = new Set<string>();
     relations.forEach((relation) => {
       const key = `${relation.source.schema}.${relation.source.table}.${relation.source.column}`;
       set.add(key);
     });
     return set;
-  }, [relations]);
+  }, [relations, focus?.sourceColumns]);
 
   const referencedColumns = React.useMemo(() => {
+    if (focus?.targetColumns) {
+      return focus.targetColumns;
+    }
     const set = new Set<string>();
     relations.forEach((relation) => {
       if (!relation.target.column) return;
@@ -395,7 +411,7 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
       set.add(key);
     });
     return set;
-  }, [relations]);
+  }, [relations, focus?.targetColumns]);
 
   const boardDimensions = React.useMemo(() => {
     let maxX = canvasSize.width;
@@ -439,16 +455,19 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
           height: DEFAULT_CARD_HEIGHT,
         };
 
+        const id = `${relation.constraintName}-${sourceId}-${targetId}`;
+
         return {
-          id: `${relation.constraintName}-${sourceId}-${targetId}`,
+          id,
           x1: sourcePos.x + sourceSize.width / 2,
           y1: sourcePos.y + sourceSize.height / 2,
           x2: targetPos.x + targetSize.width / 2,
           y2: targetPos.y + targetSize.height / 2,
+          highlighted: focus?.relationIds?.has(id) ?? false,
         };
       })
       .filter(Boolean) as DiagramLine[];
-  }, [relations, positions, cardSizes]);
+  }, [relations, positions, cardSizes, focus?.relationIds]);
 
   return (
     <div
@@ -475,6 +494,7 @@ export function DatabaseDiagram({ tables, relations }: DatabaseDiagramProps) {
         activeId={activeId}
         referencingColumns={referencingColumns}
         referencedColumns={referencedColumns}
+        highlightedTables={focus?.tables ?? null}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerEnd={finalizeDrag}

@@ -8,6 +8,8 @@ type TableCardProps = {
   table: TableInfo;
   position: { x: number; y: number };
   active: boolean;
+  highlighted: boolean;
+  dimmed: boolean;
   registerCard: (id: string) => (node: HTMLDivElement | null) => void;
   onPointerDown: (id: string) => (event: React.PointerEvent<HTMLDivElement>) => void;
   onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
@@ -21,6 +23,8 @@ export const TableCard = React.memo(function TableCard({
   table,
   position,
   active,
+  highlighted,
+  dimmed,
   registerCard,
   onPointerDown,
   onPointerMove,
@@ -37,7 +41,9 @@ export const TableCard = React.memo(function TableCard({
       data-table-card
       className={cn(
         "absolute flex w-[280px] cursor-grab touch-none select-none",
-        active && "cursor-grabbing"
+          active && "cursor-grabbing",
+          highlighted && "z-[1] scale-[1.02]",
+          dimmed && "opacity-50"
       )}
       style={{ left: position.x, top: position.y }}
       onPointerDown={onPointerDown(id)}
@@ -45,7 +51,13 @@ export const TableCard = React.memo(function TableCard({
       onPointerUp={onPointerEnd}
       onPointerCancel={onPointerEnd}
     >
-      <div className="flex w-full flex-col gap-3 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg shadow-primary/10 backdrop-blur">
+        <div
+          className={cn(
+            "flex w-full flex-col gap-3 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg shadow-primary/10 backdrop-blur transition-colors",
+            highlighted && "border-primary/60 shadow-primary/40",
+            dimmed && "border-border/40 shadow-none"
+          )}
+        >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-foreground">{table.name}</p>
