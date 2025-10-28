@@ -152,6 +152,10 @@ function normalizeOperationBlueprint(operation: unknown) {
   }
 
   const entry = { ...operation } as Record<string, unknown>;
+  const normalizedType = normalizeOperationType(entry.type);
+  if (normalizedType) {
+    entry.type = normalizedType;
+  }
   const type = entry.type;
 
   if (type === "ddl.create_table" && Array.isArray(entry.columns)) {
@@ -179,4 +183,18 @@ function normalizeColumnBlueprint(column: unknown) {
   }
 
   return blueprint;
+}
+
+function normalizeOperationType(type: unknown) {
+  if (typeof type !== "string") {
+    return undefined;
+  }
+
+  const trimmed = type.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const withDelimiters = trimmed.replace(/([a-z])([A-Z])/g, "$1_$2").replace(/[\s-]+/g, "_");
+  return withDelimiters.toLowerCase();
 }

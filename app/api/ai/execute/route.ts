@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 
@@ -5,13 +6,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { generatePlan } from "@/lib/ai/gemini";
 import { FileDatabase } from "@/lib/file-db/database";
+import { NeonOperationReplicator } from "@/lib/file-db/neon-replicator";
+import { isValidConnectionString } from "@/lib/neon";
 import type {
-    AiOperation,
-    AssistantMessagePayload,
-    ConversationHistoryEntry,
-    ExecuteAiRequest,
-    OperationCategory,
-    OperationExecution,
+  AiOperation,
+  AssistantMessagePayload,
+  ConversationHistoryEntry,
+  ExecuteAiRequest,
+  OperationCategory,
+  OperationExecution,
 } from "@/types/ai";
 
 export const runtime = "nodejs";
@@ -40,6 +43,19 @@ function trimHistory(history: ConversationHistoryEntry[] | undefined, maxEntries
   return history.slice(-maxEntries);
 }
 
+function decodeConnection(parameter?: string | null) {
+  if (!parameter) {
+    return null;
+  }
+
+  try {
+    return Buffer.from(parameter, "base64").toString("utf8").trim();
+  } catch (error) {
+    console.error("Failed to decode connection parameter", error);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const payload = (await request.json()) as ExecuteAiRequest;
@@ -52,6 +68,11 @@ export async function POST(request: NextRequest) {
     const database = new FileDatabase(DATABASE_PATH);
     await database.load();
 
+    const decodedConnection =
+      payload.connectionString?.trim() ?? decodeConnection(payload.connectionParam);
+    const connectionString =
+      decodedConnection && isValidConnectionString(decodedConnection) ? decodedConnection : null;
+
     const digest = database.getPromptDigest();
 
     const plan = await generatePlan({
@@ -62,23 +83,68 @@ export async function POST(request: NextRequest) {
 
     const results: OperationExecution[] = [];
     const warnings = new Set(plan.warnings ?? []);
+    if (decodedConnection && !connectionString) {
+      warnings.add("Connection string couldn't be validated; ran operations against the local snapshot only.");
+    }
+  let replicator: NeonOperationReplicator | undefined;
 
-    for (const operation of plan.operations) {
+    if (connectionString) {
       try {
-        const outcome = database.executeOperation(operation);
-        results.push(outcome);
+        replicator = await NeonOperationReplicator.create(connectionString);
       } catch (error) {
-        const detail = error instanceof Error ? error.message : "Unknown error occurred.";
-        results.push({
-          id: randomUUID(),
-          type: operation.type,
-          category: categorize(operation.type),
-          status: "error",
-          detail,
-        });
+        const detail = error instanceof Error ? error.message : "Unable to connect to Neon.";
         warnings.add(detail);
-        break;
+        replicator = undefined;
       }
+    }
+
+    let operationFailed = false;
+
+    try {
+      if (replicator) {
+        await replicator.begin();
+      }
+
+      for (const operation of plan.operations) {
+        try {
+          const outcome = await database.executeOperation(operation, { replicator });
+          results.push(outcome);
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : "Unknown error occurred.";
+          results.push({
+            id: randomUUID(),
+            type: operation.type,
+            category: categorize(operation.type),
+            status: "error",
+            detail,
+          });
+          warnings.add(detail);
+          operationFailed = true;
+          break;
+        }
+      }
+
+      if (replicator) {
+        if (operationFailed) {
+          await replicator.rollback();
+        } else {
+          await replicator.commit();
+        }
+      }
+    } catch (error) {
+      operationFailed = true;
+      if (replicator) {
+        try {
+          await replicator.rollback();
+        } catch (rollbackError) {
+          console.error("Failed to rollback Neon transaction", rollbackError);
+        }
+      }
+      throw error;
+    }
+
+    if (operationFailed) {
+      await database.load();
     }
 
     await database.save();

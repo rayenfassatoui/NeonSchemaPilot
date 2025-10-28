@@ -5,13 +5,26 @@ import type { DqlSelectOperation, OperationExecution } from "@/types/ai";
 import { buildPredicate } from "../helpers";
 import type { OperationContext } from "./types";
 
-export function executeSelect(
+export async function executeSelect(
   operation: DqlSelectOperation,
   context: OperationContext,
-): OperationExecution {
+): Promise<OperationExecution> {
   const table = context.requireTable(operation.table);
-  const predicate = buildPredicate(operation.criteria);
   const limit = Math.min(Math.max(operation.limit ?? 25, 1), 200);
+
+  if (context.replicator) {
+    const resultSet = await context.replicator.select(table, { ...operation, limit });
+    return {
+      id: randomUUID(),
+      type: operation.type,
+      category: "DQL",
+      status: "success",
+      detail: `Retrieved ${resultSet.rows.length} row(s) (scanned ${resultSet.rowCount}).`,
+      resultSet,
+    };
+  }
+
+  const predicate = buildPredicate(operation.criteria);
 
   const filtered = table.rows.filter((row) => predicate(row));
   const orderBy = operation.orderBy?.length ? operation.orderBy : undefined;

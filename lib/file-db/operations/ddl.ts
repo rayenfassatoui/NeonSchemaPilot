@@ -1,22 +1,22 @@
 import { randomUUID } from "node:crypto";
 
 import type {
-    DdlAddColumnOperation,
-    DdlCreateTableOperation,
-    DdlDropColumnOperation,
-    DdlDropTableOperation,
-    OperationExecution,
+  DdlAddColumnOperation,
+  DdlCreateTableOperation,
+  DdlDropColumnOperation,
+  DdlDropTableOperation,
+  OperationExecution,
 } from "@/types/ai";
 import type { DatabaseTable, TableColumnDefinition } from "@/types/file-db";
 
 import { nowIso, validateColumn } from "../helpers";
 import type { OperationContext } from "./types";
 
-export function executeCreateTable(
+export async function executeCreateTable(
   operation: DdlCreateTableOperation,
   context: OperationContext,
-): OperationExecution {
-  const { state, markDirty } = context;
+): Promise<OperationExecution> {
+  const { state, markDirty, replicator } = context;
   const existing = state.tables[operation.table];
 
   if (existing) {
@@ -29,9 +29,7 @@ export function executeCreateTable(
         detail: `Table "${operation.table}" already exists; skipping creation as requested.`,
       };
     }
-    if (operation.ifExists === "replace") {
-      delete state.tables[operation.table];
-    } else {
+    if (operation.ifExists !== "replace") {
       throw new Error(`Table "${operation.table}" already exists.`);
     }
   }
@@ -86,6 +84,14 @@ export function executeCreateTable(
     updatedAt: now,
   };
 
+  if (existing && operation.ifExists === "replace" && replicator) {
+    await replicator.dropTable({ type: "ddl.drop_table", table: operation.table, ifExists: true }, existing);
+  }
+
+  if (replicator) {
+    await replicator.createTable(operation, table);
+  }
+
   state.tables[operation.table] = table;
   markDirty();
 
@@ -98,11 +104,11 @@ export function executeCreateTable(
   };
 }
 
-export function executeDropTable(
+export async function executeDropTable(
   operation: DdlDropTableOperation,
   context: OperationContext,
-): OperationExecution {
-  const { state, markDirty } = context;
+): Promise<OperationExecution> {
+  const { state, markDirty, replicator } = context;
   const table = state.tables[operation.table];
 
   if (!table) {
@@ -118,6 +124,10 @@ export function executeDropTable(
     throw new Error(`Table "${operation.table}" does not exist.`);
   }
 
+  if (replicator) {
+    await replicator.dropTable(operation, table);
+  }
+
   delete state.tables[operation.table];
   markDirty();
 
@@ -130,11 +140,11 @@ export function executeDropTable(
   };
 }
 
-export function executeAddColumn(
+export async function executeAddColumn(
   operation: DdlAddColumnOperation,
   context: OperationContext,
-): OperationExecution {
-  const { markDirty, requireTable } = context;
+): Promise<OperationExecution> {
+  const { markDirty, requireTable, replicator } = context;
   const table = requireTable(operation.table);
   const columnName = operation.column.name.trim();
 
@@ -162,6 +172,10 @@ export function executeAddColumn(
     throw new Error(
       `Cannot add non-nullable column "${column.name}" without default value to a table containing rows.`,
     );
+  }
+
+  if (replicator) {
+    await replicator.addColumn(operation, column);
   }
 
   if (column.isPrimaryKey) {
@@ -200,11 +214,11 @@ export function executeAddColumn(
   };
 }
 
-export function executeDropColumn(
+export async function executeDropColumn(
   operation: DdlDropColumnOperation,
   context: OperationContext,
-): OperationExecution {
-  const { markDirty, requireTable } = context;
+): Promise<OperationExecution> {
+  const { markDirty, requireTable, replicator } = context;
   const table = requireTable(operation.table);
   const column = table.columns[operation.column];
 
@@ -214,6 +228,10 @@ export function executeDropColumn(
 
   if (column.isPrimaryKey) {
     throw new Error("Dropping the primary key column is not supported.");
+  }
+
+  if (replicator) {
+    await replicator.dropColumn(operation, table);
   }
 
   delete table.columns[operation.column];

@@ -1,25 +1,27 @@
 import { randomUUID } from "node:crypto";
 
 import type {
-    DmlDeleteOperation,
-    DmlInsertOperation,
-    DmlUpdateOperation,
-    OperationExecution,
+  DmlDeleteOperation,
+  DmlInsertOperation,
+  DmlUpdateOperation,
+  OperationExecution,
 } from "@/types/ai";
 
 import { buildPredicate, coerceValue, nowIso } from "../helpers";
 import type { OperationContext } from "./types";
 
-export function executeInsert(
+export async function executeInsert(
   operation: DmlInsertOperation,
   context: OperationContext,
-): OperationExecution {
-  const { markDirty, requireTable } = context;
+): Promise<OperationExecution> {
+  const { markDirty, requireTable, replicator } = context;
   const table = requireTable(operation.table);
 
   if (!operation.rows.length) {
     throw new Error("Insert operation requires at least one row.");
   }
+
+  const inserted: Array<Record<string, unknown>> = [];
 
   for (const row of operation.rows) {
     const record: Record<string, unknown> = {};
@@ -42,9 +44,14 @@ export function executeInsert(
       }
     }
 
-    table.rows.push(record);
+    inserted.push(record);
   }
 
+  if (replicator) {
+    await replicator.insert(table, inserted);
+  }
+
+  table.rows.push(...inserted);
   table.updatedAt = nowIso();
   markDirty();
 
@@ -53,15 +60,15 @@ export function executeInsert(
     type: operation.type,
     category: "DML",
     status: "success",
-    detail: `Inserted ${operation.rows.length} row(s) into "${operation.table}".`,
+    detail: `Inserted ${inserted.length} row(s) into "${operation.table}".`,
   };
 }
 
-export function executeUpdate(
+export async function executeUpdate(
   operation: DmlUpdateOperation,
   context: OperationContext,
-): OperationExecution {
-  const { markDirty, requireTable } = context;
+): Promise<OperationExecution> {
+  const { markDirty, requireTable, replicator } = context;
   const table = requireTable(operation.table);
 
   if (!Object.keys(operation.changes).length) {
@@ -69,18 +76,25 @@ export function executeUpdate(
   }
 
   const predicate = buildPredicate(operation.criteria);
-  let affected = 0;
+  const matchedRows = table.rows.filter((row) => predicate(row));
 
-  for (const row of table.rows) {
-    if (!predicate(row)) continue;
-    for (const [key, raw] of Object.entries(operation.changes)) {
-      const column = table.columns[key];
-      if (!column) {
-        throw new Error(`Column "${key}" does not exist on table "${operation.table}".`);
-      }
-      row[key] = coerceValue(column, raw);
+  const coercedChanges: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(operation.changes)) {
+    const column = table.columns[key];
+    if (!column) {
+      throw new Error(`Column "${key}" does not exist on table "${operation.table}".`);
     }
-    affected += 1;
+    coercedChanges[key] = coerceValue(column, raw);
+  }
+
+  if (replicator) {
+    await replicator.update(table, operation.criteria ?? [], coercedChanges);
+  }
+
+  for (const row of matchedRows) {
+    for (const [key, value] of Object.entries(coercedChanges)) {
+      row[key] = value;
+    }
   }
 
   table.updatedAt = nowIso();
@@ -91,21 +105,26 @@ export function executeUpdate(
     type: operation.type,
     category: "DML",
     status: "success",
-    detail: `Updated ${affected} row(s) on "${operation.table}".`,
+    detail: `Updated ${matchedRows.length} row(s) on "${operation.table}".`,
   };
 }
 
-export function executeDelete(
+export async function executeDelete(
   operation: DmlDeleteOperation,
   context: OperationContext,
-): OperationExecution {
-  const { markDirty, requireTable } = context;
+): Promise<OperationExecution> {
+  const { markDirty, requireTable, replicator } = context;
   const table = requireTable(operation.table);
   const predicate = buildPredicate(operation.criteria);
-  const before = table.rows.length;
-  table.rows = table.rows.filter((row) => !predicate(row));
-  const removed = before - table.rows.length;
 
+  const survivors = table.rows.filter((row) => !predicate(row));
+  const removed = table.rows.length - survivors.length;
+
+  if (replicator) {
+    await replicator.delete(table, operation.criteria ?? []);
+  }
+
+  table.rows = survivors;
   table.updatedAt = nowIso();
   markDirty();
 

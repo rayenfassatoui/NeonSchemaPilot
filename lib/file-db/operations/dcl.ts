@@ -5,15 +5,20 @@ import type { DclGrantOperation, DclRevokeOperation, OperationExecution } from "
 import { ensurePrivileges, nowIso } from "../helpers";
 import type { OperationContext } from "./types";
 
-export function executeGrant(
+export async function executeGrant(
   operation: DclGrantOperation,
   context: OperationContext,
-): OperationExecution {
-  const { markDirty, requireTable, ensureRole } = context;
+): Promise<OperationExecution> {
+  const { markDirty, requireTable, ensureRole, replicator, state } = context;
   const table = requireTable(operation.table);
   const privileges = ensurePrivileges(operation.privileges);
-  const role = ensureRole(operation.role, operation.description);
+  const description = operation.description ?? state.roles[operation.role]?.description;
 
+  if (replicator) {
+    await replicator.grant(table, operation.role, privileges, description);
+  }
+
+  const role = ensureRole(operation.role, description);
   table.permissions[role.name] = {
     role: role.name,
     privileges,
@@ -32,17 +37,21 @@ export function executeGrant(
   };
 }
 
-export function executeRevoke(
+export async function executeRevoke(
   operation: DclRevokeOperation,
   context: OperationContext,
-): OperationExecution {
-  const { markDirty, requireTable } = context;
+): Promise<OperationExecution> {
+  const { markDirty, requireTable, replicator } = context;
   const table = requireTable(operation.table);
   const privileges = ensurePrivileges(operation.privileges);
   const entry = table.permissions[operation.role];
 
   if (!entry) {
     throw new Error(`Role "${operation.role}" has no permissions on table "${operation.table}".`);
+  }
+
+  if (replicator) {
+    await replicator.revoke(table, operation.role, privileges);
   }
 
   entry.privileges = entry.privileges.filter((privilege) => !privileges.includes(privilege));

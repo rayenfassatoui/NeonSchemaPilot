@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +36,8 @@ export function AssistantShell() {
   const [input, setInput] = React.useState("");
   const [isSubmitting, setSubmitting] = React.useState(false);
   const endOfFeedRef = React.useRef<HTMLDivElement | null>(null);
+  const searchParams = useSearchParams();
+  const connectionParam = searchParams.get("connection") ?? undefined;
 
   const latestSnapshot = React.useMemo<SnapshotSummary | undefined>(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -93,7 +96,11 @@ export function AssistantShell() {
         const response = await fetch("/api/ai/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed, history: conversationHistory }),
+          body: JSON.stringify({
+            message: trimmed,
+            history: conversationHistory,
+            connectionParam,
+          }),
         });
 
         if (!response.ok) {
@@ -143,7 +150,7 @@ export function AssistantShell() {
         setSubmitting(false);
       }
     },
-    [input, isSubmitting, messages]
+    [connectionParam, input, isSubmitting, messages]
   );
 
   const handleKeyDown = React.useCallback(

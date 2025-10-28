@@ -31,7 +31,17 @@ function isSafeIdentifier(value?: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as TableDataRequestBody;
+    const rawBody = await request.text();
+
+    let body: TableDataRequestBody = {};
+    if (rawBody.trim()) {
+      try {
+        body = JSON.parse(rawBody) as TableDataRequestBody;
+      } catch (error) {
+        return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+      }
+    }
+
     const resolvedConnection = body.connectionString?.trim() ?? decodeConnection(body.connectionParam);
 
     if (!resolvedConnection) {

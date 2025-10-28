@@ -15,13 +15,13 @@ import { executeGrant, executeRevoke } from "./operations/dcl";
 import { executeAddColumn, executeCreateTable, executeDropColumn, executeDropTable } from "./operations/ddl";
 import { executeDelete, executeInsert, executeUpdate } from "./operations/dml";
 import { executeSelect } from "./operations/dql";
-import type { OperationContext } from "./operations/types";
+import type { OperationContext, OperationReplicator } from "./operations/types";
 
 type OperationExecutorMap = {
   [K in AiOperation["type"]]: (
     operation: Extract<AiOperation, { type: K }> ,
     context: OperationContext,
-  ) => OperationExecution;
+  ) => Promise<OperationExecution>;
 };
 
 const OPERATION_EXECUTORS: OperationExecutorMap = {
@@ -47,6 +47,7 @@ export class FileDatabase {
     try {
       const raw = await readFile(this.filePath, "utf8");
       this.data = JSON.parse(raw) as DatabaseFile;
+      this.dirty = false;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         await this.initializeEmpty();
@@ -85,12 +86,15 @@ export class FileDatabase {
     return formatPromptDigest(this.state, maxRows);
   }
 
-  executeOperation(operation: AiOperation): OperationExecution {
+  async executeOperation(
+    operation: AiOperation,
+    options?: { replicator?: OperationReplicator },
+  ): Promise<OperationExecution> {
     const handler = OPERATION_EXECUTORS[operation.type];
     if (!handler) {
       throw new Error(`Unsupported operation type: ${operation.type}`);
     }
-    return handler(operation as never, this.createOperationContext());
+    return handler(operation as never, this.createOperationContext(options?.replicator));
   }
 
   private async initializeEmpty() {
@@ -149,7 +153,6 @@ export class FileDatabase {
       if (description && description !== existing.description) {
         existing.description = description;
         existing.updatedAt = nowIso();
-        this.dirty = true;
       }
       return existing;
     }
@@ -161,16 +164,16 @@ export class FileDatabase {
       updatedAt: nowIso(),
     };
     state.roles[name] = created;
-    this.dirty = true;
     return created;
   }
 
-  private createOperationContext(): OperationContext {
+  private createOperationContext(replicator?: OperationReplicator): OperationContext {
     return {
       state: this.state,
       markDirty: () => this.markDirty(),
       requireTable: (name) => this.requireTable(name),
       ensureRole: (name, description) => this.ensureRole(name, description),
+      replicator,
     };
   }
 }

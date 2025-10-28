@@ -171,4 +171,6 @@ export type ExecuteAiResponse = {
 export type ExecuteAiRequest = {
   message: string;
   history?: ConversationHistoryEntry[];
+  connectionParam?: string;
+  connectionString?: string;
 };
