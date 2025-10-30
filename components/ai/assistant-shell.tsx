@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,7 +38,30 @@ export function AssistantShell() {
   const [pendingConfirmation, setPendingConfirmation] = React.useState<PendingConfirmation | null>(null);
   const endOfFeedRef = React.useRef<HTMLDivElement | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const connectionParam = searchParams.get("connection") ?? undefined;
+  const [cachedConnection, setCachedConnection] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const stored = window.sessionStorage.getItem("mydatabase.connection");
+    if (!stored) {
+      return;
+    }
+
+    setCachedConnection(stored);
+
+    if (!connectionParam) {
+      const params = new URLSearchParams(window.location.search);
+      params.set("connection", stored);
+      const next = params.toString();
+      router.replace(next ? `?${next}` : "", { scroll: false });
+    }
+  }, [connectionParam, router]);
+
+  const effectiveConnection = connectionParam ?? cachedConnection ?? undefined;
 
   const latestSnapshot = React.useMemo<SnapshotSummary | undefined>(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -108,7 +131,7 @@ export function AssistantShell() {
           body: JSON.stringify({
             message: trimmed,
             history: conversationHistory,
-            connectionParam,
+            connectionParam: effectiveConnection,
           }),
         });
 
@@ -167,7 +190,7 @@ export function AssistantShell() {
         setSubmitting(false);
       }
     },
-    [appendHistory, connectionParam, input, isSubmitting, messages]
+    [appendHistory, effectiveConnection, input, isSubmitting, messages]
   );
   const handleConfirm = React.useCallback(async () => {
     if (!pendingConfirmation || isConfirming) {
@@ -202,7 +225,7 @@ export function AssistantShell() {
         body: JSON.stringify({
           message: confirmationText,
           history: conversationHistory,
-          connectionParam,
+          connectionParam: effectiveConnection,
           confirm: true,
           plan: pendingConfirmation.plan,
         }),
@@ -257,7 +280,7 @@ export function AssistantShell() {
     } finally {
       setConfirming(false);
     }
-  }, [appendHistory, connectionParam, isConfirming, pendingConfirmation]);
+  }, [appendHistory, effectiveConnection, isConfirming, pendingConfirmation]);
 
   const handleCancelConfirmation = React.useCallback(() => {
     setPendingConfirmation(null);

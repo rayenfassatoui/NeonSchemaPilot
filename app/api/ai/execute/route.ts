@@ -78,6 +78,14 @@ export async function POST(request: NextRequest) {
     const connectionString =
       decodedConnection && isValidConnectionString(decodedConnection) ? decodedConnection : null;
 
+    console.log('[AI Execute] Connection debug:', {
+      hasConnectionParam: Boolean(payload.connectionParam),
+      hasConnectionString: Boolean(payload.connectionString),
+      decodedConnection: decodedConnection ? '***REDACTED***' : null,
+      isValid: Boolean(connectionString),
+      confirm: payload.confirm
+    });
+
     const warnings = new Set<string>();
     if (!decodedConnection) {
       warnings.add("No Neon connection detected; using the local workspace snapshot instead of your live database.");
@@ -92,11 +100,15 @@ export async function POST(request: NextRequest) {
     if (connectionString) {
       try {
         replicator = await NeonOperationReplicator.create(connectionString);
+        console.log('[AI Execute] Neon replicator created successfully');
       } catch (error) {
         const detail = error instanceof Error ? error.message : "Unable to connect to Neon.";
+        console.error('[AI Execute] Failed to create Neon replicator:', detail);
         warnings.add(detail);
         replicator = undefined;
       }
+    } else {
+      console.log('[AI Execute] No connection string - operations will run locally only');
     }
 
     const database = new FileDatabase(DATABASE_PATH);
@@ -118,6 +130,13 @@ export async function POST(request: NextRequest) {
     }
 
     const shouldRequireConfirmation = Boolean(replicator) && !payload.confirm;
+
+    console.log('[AI Execute] Execution mode:', {
+      hasReplicator: Boolean(replicator),
+      isConfirming: payload.confirm,
+      shouldRequireConfirmation,
+      applyChanges: !shouldRequireConfirmation
+    });
 
     const execution = await executePlanOperations({
       operations: plan.operations,

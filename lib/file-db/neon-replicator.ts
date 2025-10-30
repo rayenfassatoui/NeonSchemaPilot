@@ -46,18 +46,21 @@ export class NeonOperationReplicator implements OperationReplicator {
 
   async begin() {
     if (this.inTransaction) return;
+    console.log('[Neon Replicator] BEGIN transaction');
     await this.sql`begin`;
     this.inTransaction = true;
   }
 
   async commit() {
     if (!this.inTransaction) return;
+    console.log('[Neon Replicator] COMMIT transaction');
     await this.sql`commit`;
     this.inTransaction = false;
   }
 
   async rollback() {
     if (!this.inTransaction) return;
+    console.log('[Neon Replicator] ROLLBACK transaction');
     await this.sql`rollback`;
     this.inTransaction = false;
   }
@@ -69,22 +72,25 @@ export class NeonOperationReplicator implements OperationReplicator {
 
   const prefix = operation.ifExists === "skip" ? "CREATE TABLE IF NOT EXISTS" : "CREATE TABLE";
     const statement = `${prefix} ${this.tableIdentifier(table.name)} (\n  ${definition}\n)`;
-    await this.sql.unsafe(statement);
+    console.log('[Neon Replicator] Executing CREATE TABLE:', statement);
+    console.log('[Neon Replicator] In transaction:', this.inTransaction);
+    const result = await this.sql.query(statement);
+    console.log('[Neon Replicator] CREATE TABLE result:', result);
   }
 
   async dropTable(operation: DdlDropTableOperation, table: DatabaseTable) {
   const keyword = operation.ifExists ? "IF EXISTS " : "";
-  await this.sql.unsafe(`DROP TABLE ${keyword}${this.tableIdentifier(table.name)}`);
+  await this.sql.query(`DROP TABLE ${keyword}${this.tableIdentifier(table.name)}`);
   }
 
   async addColumn(operation: DdlAddColumnOperation, column: TableColumnDefinition) {
-    await this.sql.unsafe(
+    await this.sql.query(
         `ALTER TABLE ${this.tableIdentifier(operation.table)} ADD COLUMN ${buildColumnDefinition(column)}`,
     );
   }
 
   async dropColumn(operation: DdlDropColumnOperation, table: DatabaseTable) {
-    await this.sql.unsafe(
+    await this.sql.query(
         `ALTER TABLE ${this.tableIdentifier(table.name)} DROP COLUMN ${quoteIdentifier(operation.column)}`,
     );
   }
@@ -290,14 +296,14 @@ export class NeonOperationReplicator implements OperationReplicator {
   ) {
     await this.ensureRoleExists(roleName, description);
     const privilegeList = privileges.map((privilege) => privilege.toUpperCase()).join(", ");
-    await this.sql.unsafe(
+    await this.sql.query(
       `GRANT ${privilegeList} ON TABLE ${this.tableIdentifier(table.name)} TO ${quoteIdentifier(roleName)}`,
     );
   }
 
   async revoke(table: DatabaseTable, roleName: string, privileges: Privilege[]) {
     const privilegeList = privileges.map((privilege) => privilege.toUpperCase()).join(", ");
-    await this.sql.unsafe(
+    await this.sql.query(
       `REVOKE ${privilegeList} ON TABLE ${this.tableIdentifier(table.name)} FROM ${quoteIdentifier(roleName)}`,
     );
   }
@@ -312,7 +318,7 @@ export class NeonOperationReplicator implements OperationReplicator {
 
   private async ensureRoleExists(roleName: string, description?: string) {
     const escapedName = escapeLiteral(roleName);
-    await this.sql.unsafe(`
+    await this.sql.query(`
       do $$
       begin
         if not exists (select 1 from pg_roles where rolname = '${escapedName}') then
@@ -323,7 +329,7 @@ export class NeonOperationReplicator implements OperationReplicator {
     `);
 
     if (description) {
-      await this.sql.unsafe(
+      await this.sql.query(
         `comment on role ${quoteIdentifier(roleName)} is '${escapeLiteral(description)}'`,
       );
     }

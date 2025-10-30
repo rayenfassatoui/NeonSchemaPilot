@@ -1,19 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Loader2, ShieldCheck, UploadCloud } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,8 @@ interface NeonConnectDialogProps {
 
 export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = React.useState(false);
   const [connectionString, setConnectionString] = React.useState("");
   const [pending, setPending] = React.useState(false);
@@ -97,6 +99,27 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
       return null;
     }
   }, [response, connectionString]);
+
+  React.useEffect(() => {
+    if (!response || !encodedConnection) {
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("mydatabase.connection", encodedConnection);
+    }
+
+    const existing = searchParams?.get("connection");
+    if (existing === encodedConnection) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams ? Array.from(searchParams.entries()) : []);
+    params.set("connection", encodedConnection);
+
+    const nextUrl = params.size ? `${pathname}?${params.toString()}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+  }, [encodedConnection, pathname, response, router, searchParams]);
 
   const navigateToOverview = () => {
     if (!encodedConnection) return;
