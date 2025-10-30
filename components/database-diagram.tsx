@@ -532,7 +532,9 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus, showRe
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,theme(colors.border/10),transparent_65%)]" />
 
-      <div className="pointer-events-none absolute right-4 top-4 z-20 flex flex-col items-end gap-2 text-xs">
+      <ZoomControls onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} onReset={handleResetView} />
+
+      <div className="pointer-events-none absolute right-4 top-16 z-20 flex flex-col items-end gap-2 text-xs">
         <span className="rounded-full border border-border/50 bg-background/90 px-3 py-1 font-medium text-muted-foreground shadow-sm">
           {showRelationLines
             ? `${relationSummary.visible} / ${relationSummary.total} relation${relationSummary.total === 1 ? "" : "s"}`
@@ -549,8 +551,6 @@ export function DatabaseDiagram({ tables, relations, focus, onTableFocus, showRe
           </span>
         ) : null}
       </div>
-
-      <ZoomControls onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} onReset={handleResetView} />
 
       <DiagramBoard
         dimensions={boardDimensions}
