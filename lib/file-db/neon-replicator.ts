@@ -2,13 +2,13 @@ import { neon } from "@neondatabase/serverless";
 import type { FullQueryResults } from "@neondatabase/serverless";
 
 import type {
-    CriteriaCondition,
-    DdlAddColumnOperation,
-    DdlCreateTableOperation,
-    DdlDropColumnOperation,
-    DdlDropTableOperation,
-    DqlSelectOperation,
-    QueryResultSet,
+  CriteriaCondition,
+  DdlAddColumnOperation,
+  DdlCreateTableOperation,
+  DdlDropColumnOperation,
+  DdlDropTableOperation,
+  DqlSelectOperation,
+  QueryResultSet,
 } from "@/types/ai";
 import type { DatabaseFile, DatabaseTable, Privilege, TableColumnDefinition } from "@/types/file-db";
 
