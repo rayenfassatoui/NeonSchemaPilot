@@ -24,8 +24,8 @@ const steps = [
 
 export function HomeWorkflow() {
   return (
-    <section className="grid gap-10 lg:grid-cols-[0.8fr_1fr]" id="workflow">
-      <div className="space-y-4">
+    <section className="grid gap-12 lg:gap-16 lg:grid-cols-[0.8fr_1fr]" id="workflow">
+      <div className="space-y-6">
         <Badge variant="outline" className="border-border/60 bg-background/70 uppercase tracking-[0.3em] text-muted-foreground">
           How it works
         </Badge>
@@ -38,7 +38,7 @@ export function HomeWorkflow() {
       </div>
       <ol className="space-y-6">
         {steps.map((step, index) => (
-          <Card key={step.title} className="relative overflow-hidden rounded-2xl border border-border/60 bg-background/60 p-6 shadow-sm">
+          <Card key={step.title} className="relative overflow-hidden rounded-2xl border border-border/60 bg-background/60 p-6 shadow-sm transition-shadow hover:shadow-md">
             <span className="absolute -top-4 right-6 inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background text-sm font-semibold text-muted-foreground">
               {index + 1}
             </span>

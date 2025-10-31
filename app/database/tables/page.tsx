@@ -23,7 +23,7 @@ export default async function TablesViewPage({ searchParams }: TablesViewPagePro
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-16">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-16">
         <DatabaseSummaryHeader
           connectionMeta={connectionMeta}
           snapshot={snapshot}
@@ -32,11 +32,11 @@ export default async function TablesViewPage({ searchParams }: TablesViewPagePro
           description="Scan column definitions, defaults, and nullability across the entire schema. Perfect when you need quick answers for migrations or API contracts."
         />
 
-    <TableDataExplorer connectionParam={connectionParam} tables={snapshot.tables} />
+        <TableDataExplorer connectionParam={connectionParam} tables={snapshot.tables} />
 
-    <section className="space-y-6">
+        <section className="space-y-8">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <div>
+            <div className="space-y-2">
               <h2 className="text-2xl font-semibold">Tables overview</h2>
               <p className="text-sm text-muted-foreground">
                 Each panel mirrors a table. Scroll horizontally to review the full column matrix.

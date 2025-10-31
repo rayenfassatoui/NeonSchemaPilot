@@ -23,7 +23,7 @@ export default async function SqlViewPage({ searchParams }: SqlViewPageProps) {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-16">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-14 px-6 py-16">
         <DatabaseSummaryHeader
           connectionMeta={connectionMeta}
           snapshot={snapshot}
@@ -32,9 +32,9 @@ export default async function SqlViewPage({ searchParams }: SqlViewPageProps) {
           description="Review the assembled SQL needed to reproduce your schema. Copy it into migrations, documentation, or onboarding wikis."
         />
 
-        <section className="space-y-4">
+        <section className="space-y-6">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <h2 className="text-2xl font-semibold">Snapshot file</h2>
               <p className="text-sm text-muted-foreground">
                 Read-only text. Copy, download, or share as needed—no credentials embedded.
@@ -42,7 +42,7 @@ export default async function SqlViewPage({ searchParams }: SqlViewPageProps) {
             </div>
             <CopySqlButton content={sqlPreview} />
           </div>
-          <pre className="max-h-[540px] overflow-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-muted/30 px-6 py-5 text-sm leading-relaxed text-muted-foreground shadow-inner">
+          <pre className="max-h-[540px] overflow-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-muted/30 px-6 py-6 text-sm leading-relaxed text-muted-foreground shadow-inner">
 {sqlPreview}
           </pre>
         </section>

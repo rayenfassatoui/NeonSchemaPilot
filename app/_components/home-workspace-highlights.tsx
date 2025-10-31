@@ -37,15 +37,15 @@ const highlights: Highlight[] = [
 
 export function HomeWorkspaceHighlights() {
   return (
-    <section className="rounded-[2rem] border border-border/50 bg-muted/20 p-10 shadow-inner shadow-primary/5 backdrop-blur-sm" id="workspace">
-      <div className="flex flex-col gap-3 text-center">
+    <section className="rounded-[2rem] border border-border/50 bg-muted/20 p-12 shadow-inner shadow-primary/5 backdrop-blur-sm" id="workspace">
+      <div className="flex flex-col gap-4 text-center">
         <span className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">Workspaces that scale with you</span>
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">One schema, three perspectives</h2>
         <p className="mx-auto max-w-3xl text-base text-muted-foreground">
           Whether you think in diagrams, rows, or raw SQL, MyDatabase Studio keeps every perspective synchronized. Switch contexts without losing the thread of the conversation.
         </p>
       </div>
-      <Separator className="my-10 border-border/40" />
+      <Separator className="my-12 border-border/40" />
       <div className="grid gap-6 lg:grid-cols-3">
         {highlights.map((highlight) => {
           const Icon = highlight.icon;
@@ -54,7 +54,7 @@ export function HomeWorkspaceHighlights() {
               key={highlight.title}
               className="h-full rounded-2xl border border-border/60 bg-background/70 p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10"
             >
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                 {highlight.meta}
               </div>

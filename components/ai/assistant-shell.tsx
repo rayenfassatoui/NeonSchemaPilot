@@ -316,8 +316,8 @@ export function AssistantShell() {
   return (
     <div className="relative min-h-dvh bg-gradient-to-b from-background via-background/95 to-background text-foreground">
       <div className="absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),_transparent_55%)]" />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-16">
-        <header className="space-y-3">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-16">
+        <header className="space-y-4">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-primary/80">
             AI orchestration
             <span className="h-1 w-1 rounded-full bg-primary" />

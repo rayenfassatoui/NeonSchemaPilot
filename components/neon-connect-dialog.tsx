@@ -135,18 +135,18 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
           Connect with Neon URL
         </Button>
       </DialogTrigger>
-      <DialogContent className="gap-6 sm:max-w-xl">
-        <DialogHeader className="space-y-2 text-left">
+      <DialogContent className="gap-8 sm:max-w-xl">
+        <DialogHeader className="space-y-3 text-left">
           <DialogTitle className="text-2xl font-semibold">
             Share your Neon access
           </DialogTitle>
           <DialogDescription className="text-base text-muted-foreground">
-            Paste a Neon Postgres connection string. We’ll read the catalog and
+            Paste a Neon Postgres connection string. We'll read the catalog and
             outline every table automatically—no SQL dump needed.
           </DialogDescription>
         </DialogHeader>
-        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-          <div className="space-y-2">
+        <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
+          <div className="space-y-3">
             <Label htmlFor="neon-url">Neon database URL</Label>
             <Input
               id="neon-url"
@@ -169,9 +169,9 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
           ) : null}
 
           {response ? (
-            <div className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-4">
+            <div className="space-y-4 rounded-xl border border-border/60 bg-muted/30 p-5">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="space-y-1">
                   <p className="text-sm font-semibold text-foreground">Schema snapshot</p>
                   <p className="text-xs text-muted-foreground">{headlineSummary}</p>
                 </div>
@@ -179,9 +179,9 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
                   Read only
                 </span>
               </div>
-              <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="space-y-3 text-xs text-muted-foreground">
                 {response.snapshot.tables.slice(0, 3).map((table) => (
-                  <div key={`${table.schema}.${table.name}`} className="rounded-lg border border-border/40 bg-background/80 px-3 py-2">
+                  <div key={`${table.schema}.${table.name}`} className="rounded-lg border border-border/40 bg-background/80 px-3 py-2.5">
                     <p className="font-medium text-foreground">
                       {table.schema}.{table.name}
                     </p>
@@ -215,7 +215,7 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
             </div>
           ) : null}
 
-          <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <DialogFooter className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-emerald-500" aria-hidden="true" />
               Encrypted in transit. Nothing executes without your review.

@@ -22,7 +22,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
           <SiteNavbar />
         </React.Suspense>
       ) : null}
-      <main className={cn("flex-1", showNavbar ? "pb-16 pt-28" : "")}>{children}</main>
+      <main className={cn("flex-1", showNavbar ? "px-4 py-8 pb-16 pt-28 sm:px-6 lg:px-8" : "")}>{children}</main>
     </div>
   );
 }

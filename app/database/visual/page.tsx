@@ -23,7 +23,7 @@ export default async function VisualViewPage({ searchParams }: VisualViewPagePro
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-16">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 py-16">
         <DatabaseSummaryHeader
           connectionMeta={connectionMeta}
           snapshot={snapshot}
@@ -35,7 +35,7 @@ export default async function VisualViewPage({ searchParams }: VisualViewPagePro
         {snapshot.tables.length ? (
           <VisualExplorer tables={snapshot.tables} relations={snapshot.relations} />
         ) : (
-          <section className="rounded-2xl border border-dashed border-border/60 bg-background/60 px-6 py-10 text-center text-sm text-muted-foreground">
+          <section className="rounded-2xl border border-dashed border-border/60 bg-background/60 px-6 py-12 text-center text-sm text-muted-foreground">
             No user-defined tables were returned for this connection.
           </section>
         )}

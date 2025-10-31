@@ -31,8 +31,8 @@ const features = [
 
 export function HomeFeatureGrid() {
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-8 text-center" id="features">
-      <div className="space-y-3">
+    <section className="mx-auto w-full max-w-5xl space-y-10 text-center" id="features">
+      <div className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">Why MyDatabase Studio</p>
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Built for database storytellers</h2>
         <p className="mx-auto max-w-2xl text-base text-muted-foreground">
@@ -47,7 +47,7 @@ export function HomeFeatureGrid() {
               key={feature.title}
               className="group h-full rounded-2xl border border-border/70 bg-background/60 p-6 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-border/60 hover:shadow-lg hover:shadow-primary/10"
             >
-              <div className="mb-5 inline-flex items-center justify-center rounded-full border border-border/60 bg-background/80 p-2 text-primary">
+              <div className="mb-4 inline-flex items-center justify-center rounded-full border border-border/60 bg-background/80 p-2.5 text-primary">
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">{feature.title}</h3>

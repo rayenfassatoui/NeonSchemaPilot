@@ -15,10 +15,10 @@ interface HomeHeroProps {
 
 export function HomeHero({ summaryLabel, sqlPreview, onSnapshot }: HomeHeroProps) {
   return (
-    <section className="grid gap-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]" id="hero">
+    <section className="grid gap-12 lg:gap-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]" id="hero">
       <div className="space-y-10">
-        <div className="space-y-5">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-4 py-1 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground backdrop-blur-sm">
+        <div className="space-y-6">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground backdrop-blur-sm">
             Neon ready
             <span className="h-1 w-1 rounded-full bg-primary" />
           </span>
@@ -43,7 +43,7 @@ export function HomeHero({ summaryLabel, sqlPreview, onSnapshot }: HomeHeroProps
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4 pt-2">
           <NeonConnectDialog onSnapshot={onSnapshot} />
           <Link
             href="#workflow"
@@ -59,7 +59,7 @@ export function HomeHero({ summaryLabel, sqlPreview, onSnapshot }: HomeHeroProps
       </div>
       <Card className="relative overflow-hidden rounded-2xl border border-border/70 bg-background/60 shadow-xl shadow-primary/5 backdrop-blur-2xl dark:border-border/40">
         <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-primary/10 via-transparent to-transparent dark:from-primary/15" />
-        <CardContent className="relative space-y-6 pb-8 pt-6">
+        <CardContent className="relative space-y-6 px-6 pb-8 pt-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />

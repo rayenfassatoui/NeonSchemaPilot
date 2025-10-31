@@ -34,7 +34,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   const avatarLabel = isUser ? "You" : "AI";
 
   return (
-    <div className={cn("flex gap-3", isUser ? "justify-end" : "justify-start")}
+    <div className={cn("flex gap-4", isUser ? "justify-end" : "justify-start")}
          data-pending={message.pending ? "true" : undefined}>
       <div
         className={cn(
