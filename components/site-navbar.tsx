@@ -20,6 +20,8 @@ const ROUTE_HIGHLIGHTS: NavHighlight[] = [
   { label: "Visual layout", href: "/database/visual", hint: "Canvas" },
   { label: "Tables view", href: "/database/tables", hint: "Ledger" },
   { label: "SQL preview", href: "/database/sql", hint: "Snapshot" },
+  { label: "Query history", href: "/database/history", hint: "History" },
+  { label: "Export data", href: "/database/export", hint: "Export" },
 ];
 
 function formatPath(pathname: string) {

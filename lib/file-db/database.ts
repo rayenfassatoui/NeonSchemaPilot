@@ -16,6 +16,7 @@ import { executeAddColumn, executeCreateTable, executeDropColumn, executeDropTab
 import { executeDelete, executeInsert, executeUpdate } from "./operations/dml";
 import { executeSelect } from "./operations/dql";
 import type { OperationContext, OperationReplicator } from "./operations/types";
+import { getQueryHistoryManager } from "../query-history";
 
 type OperationExecutorMap = {
   [K in AiOperation["type"]]: (
@@ -107,7 +108,83 @@ export class FileDatabase {
     if (!handler) {
       throw new Error(`Unsupported operation type: ${operation.type}`);
     }
-    return handler(operation as never, this.createOperationContext(options?.replicator));
+    
+    const startTime = Date.now();
+    let result: OperationExecution;
+    
+    try {
+      result = await handler(operation as never, this.createOperationContext(options?.replicator));
+      const executionTime = Date.now() - startTime;
+      
+      // Log to query history
+      const historyManager = getQueryHistoryManager();
+      const operationType = operation.type.split('.')[0].toUpperCase() as "DDL" | "DML" | "DQL" | "DCL";
+      
+      await historyManager.addEntry({
+        query: this.getOperationQuery(operation),
+        operationType,
+        status: result.status === "error" ? "error" : "success",
+        executionTimeMs: executionTime,
+        affectedRows: result.resultSet?.rowCount,
+        errorMessage: result.status === "error" ? result.detail : undefined,
+        tables: this.getOperationTables(operation),
+      });
+      
+      return result;
+    } catch (error) {
+      const executionTime = Date.now() - startTime;
+      
+      // Log error to query history
+      const historyManager = getQueryHistoryManager();
+      const operationType = operation.type.split('.')[0].toUpperCase() as "DDL" | "DML" | "DQL" | "DCL";
+      
+      await historyManager.addEntry({
+        query: this.getOperationQuery(operation),
+        operationType,
+        status: "error",
+        executionTimeMs: executionTime,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        tables: this.getOperationTables(operation),
+      });
+      
+      throw error;
+    }
+  }
+
+  private getOperationQuery(operation: AiOperation): string {
+    // Generate a readable query string from the operation
+    switch (operation.type) {
+      case "ddl.create_table":
+        return `CREATE TABLE ${operation.table} (${operation.columns.map(c => `${c.name} ${c.dataType}`).join(", ")})`;
+      case "ddl.drop_table":
+        return `DROP TABLE ${operation.table}`;
+      case "ddl.alter_table_add_column":
+        return `ALTER TABLE ${operation.table} ADD COLUMN ${operation.column.name} ${operation.column.dataType}`;
+      case "ddl.alter_table_drop_column":
+        return `ALTER TABLE ${operation.table} DROP COLUMN ${operation.column}`;
+      case "dml.insert":
+        return `INSERT INTO ${operation.table} VALUES (${operation.rows.length} rows)`;
+      case "dml.update":
+        return `UPDATE ${operation.table} SET ${Object.keys(operation.changes).join(", ")} WHERE ${operation.criteria.length} conditions`;
+      case "dml.delete":
+        return `DELETE FROM ${operation.table} WHERE ${operation.criteria.length} conditions`;
+      case "dql.select":
+        return `SELECT ${operation.columns?.join(", ") || "*"} FROM ${operation.table}${operation.criteria ? ` WHERE ${operation.criteria.length} conditions` : ""}`;
+      case "dcl.grant":
+        return `GRANT ${operation.privileges.join(", ")} ON ${operation.table} TO ${operation.role}`;
+      case "dcl.revoke":
+        return `REVOKE ${operation.privileges.join(", ")} ON ${operation.table} FROM ${operation.role}`;
+      default:
+        return JSON.stringify(operation);
+    }
+  }
+
+  private getOperationTables(operation: AiOperation): string[] {
+    const tables: string[] = [];
+    if ("table" in operation && operation.table) {
+      tables.push(operation.table);
+    }
+    return tables;
   }
 
   private async initializeEmpty() {

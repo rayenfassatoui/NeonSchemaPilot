@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 
 import { HomeCallToAction } from "./_components/home-call-to-action";
 import { HomeFeatureGrid } from "./_components/home-feature-grid";
@@ -62,7 +63,9 @@ export default function Home() {
       </div>
       <HomeHeader />
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-24 px-6 pb-32 pt-4">
-        <HomeHero summaryLabel={summaryLabel} sqlPreview={sqlPreview} onSnapshot={handleSnapshot} />
+        <Suspense fallback={<div className="h-[600px]" />}>
+          <HomeHero summaryLabel={summaryLabel} sqlPreview={sqlPreview} onSnapshot={handleSnapshot} />
+        </Suspense>
         <HomeFeatureGrid />
         <HomeWorkflow />
         <HomeWorkspaceHighlights />
