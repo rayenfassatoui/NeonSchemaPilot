@@ -176,15 +176,19 @@ export function parseSQL(content: string): ParsedImportData {
   const rows: any[] = [];
   const insertRegex = /INSERT INTO\s+[`"]?\w+[`"]?\s*(?:\(([^)]+)\))?\s*VALUES\s*\(([^;]+)\)/gi;
   
+  let insertColumns: string[] = [];
   let match;
   while ((match = insertRegex.exec(content)) !== null) {
     const columnList = match[1];
     const valuesList = match[2];
 
-    // Parse columns if specified in INSERT
-    if (columnList && columns.length === 0) {
-      columns = columnList.split(",").map((col) => col.trim().replace(/[`"]/g, ""));
+    // Parse columns from INSERT statement (prioritize this over CREATE TABLE)
+    if (columnList) {
+      insertColumns = columnList.split(",").map((col) => col.trim().replace(/[`"]/g, ""));
     }
+
+    // Use INSERT columns if available, otherwise use CREATE TABLE columns
+    const columnsToUse = insertColumns.length > 0 ? insertColumns : columns;
 
     // Parse values (handling multiple value sets)
     const valueSets = valuesList.split(/\),\s*\(/);
@@ -193,12 +197,17 @@ export function parseSQL(content: string): ParsedImportData {
       const values = parseValueSet(valueSet.replace(/^\(|\)$/g, ""));
       const row: any = {};
       
-      columns.forEach((col, idx) => {
+      columnsToUse.forEach((col, idx) => {
         row[col] = values[idx] !== undefined ? values[idx] : null;
       });
       
       rows.push(row);
     });
+  }
+
+  // Update columns to match what was actually used
+  if (insertColumns.length > 0) {
+    columns = insertColumns;
   }
 
   if (rows.length === 0) {
@@ -291,25 +300,46 @@ export function inferColumnTypes(
       return;
     }
 
-    // Check if all values are numbers
-    const allNumbers = values.every((v) => typeof v === "number" || !isNaN(Number(v)));
-    if (allNumbers) {
-      const hasDecimals = values.some((v) => String(v).includes("."));
-      types[col] = hasDecimals ? "REAL" : "INTEGER";
-      return;
-    }
-
-    // Check if all values are booleans
+    // Check if all values are booleans FIRST (before numbers)
     const allBooleans = values.every((v) => 
-      typeof v === "boolean" || v === "true" || v === "false"
+      typeof v === "boolean" || 
+      v === "true" || 
+      v === "false" || 
+      v === true || 
+      v === false ||
+      (typeof v === "string" && (v.toLowerCase() === "true" || v.toLowerCase() === "false"))
     );
     if (allBooleans) {
       types[col] = "BOOLEAN";
       return;
     }
 
-    // Check if values look like dates
+    // Check if all values are numbers
+    const allNumbers = values.every((v) => {
+      if (typeof v === "boolean") return false; // Exclude booleans
+      if (typeof v === "string" && (v.toLowerCase() === "true" || v.toLowerCase() === "false")) return false;
+      return typeof v === "number" || !isNaN(Number(v));
+    });
+    if (allNumbers) {
+      const hasDecimals = values.some((v) => String(v).includes("."));
+      types[col] = hasDecimals ? "REAL" : "INTEGER";
+      return;
+    }
+
+    // Check if values look like dates (be strict - must match common date patterns)
     const allDates = values.every((v) => {
+      if (typeof v !== "string") return false;
+      // Only consider it a date if it matches common date patterns
+      const datePatterns = [
+        /^\d{4}-\d{2}-\d{2}$/,                    // YYYY-MM-DD
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,  // ISO 8601
+        /^\d{2}\/\d{2}\/\d{4}$/,                  // MM/DD/YYYY
+        /^\d{4}\/\d{2}\/\d{2}$/,                  // YYYY/MM/DD
+      ];
+      const matchesPattern = datePatterns.some(pattern => pattern.test(v));
+      if (!matchesPattern) return false;
+      
+      // Also verify it's a valid date
       const date = new Date(v);
       return !isNaN(date.getTime());
     });

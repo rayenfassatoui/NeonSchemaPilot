@@ -369,8 +369,9 @@ async function importToNeon(
 
     if (options.mode === "append" && !tableExists) {
       if (options.createTableIfNotExists) {
-        // Create table
+        // Create table - exclude 'id' column as it will be auto-generated
         const columnDefs = parsed.columns
+          .filter((col) => col.toLowerCase() !== "id")
           .map((col) => {
             const type = mapTypeToPostgres(parsed.inferredTypes?.[col] || "TEXT");
             return `"${col}" ${type}`;
@@ -388,7 +389,9 @@ async function importToNeon(
         await sql.query(`DROP TABLE "${parsed.tableName}"`);
       }
       
+      // Create table - exclude 'id' column as it will be auto-generated
       const columnDefs = parsed.columns
+        .filter((col) => col.toLowerCase() !== "id")
         .map((col) => {
           const type = mapTypeToPostgres(parsed.inferredTypes?.[col] || "TEXT");
           return `"${col}" ${type}`;
@@ -399,7 +402,9 @@ async function importToNeon(
     }
 
     if (options.mode === "create") {
+      // Create table - exclude 'id' column as it will be auto-generated
       const columnDefs = parsed.columns
+        .filter((col) => col.toLowerCase() !== "id")
         .map((col) => {
           const type = mapTypeToPostgres(parsed.inferredTypes?.[col] || "TEXT");
           return `"${col}" ${type}`;
@@ -414,11 +419,12 @@ async function importToNeon(
       await sql.query(`TRUNCATE TABLE "${parsed.tableName}"`);
     }
 
-    // Insert rows
+    // Insert rows - exclude 'id' column to let PostgreSQL auto-generate it
     for (let i = 0; i < parsed.rows.length; i++) {
       try {
         const row = parsed.rows[i];
-        const columns = Object.keys(row);
+        // Filter out 'id' column from the row data
+        const columns = Object.keys(row).filter((col) => col.toLowerCase() !== "id");
         const values = columns.map((col) => row[col]);
         
         const placeholders = values.map((_, idx) => `$${idx + 1}`).join(", ");
