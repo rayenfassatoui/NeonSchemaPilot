@@ -205,7 +205,7 @@ export function NeonConnectDialog({ onSnapshot }: NeonConnectDialogProps) {
                 ) : null}
                 {response.snapshot.relations.length ? (
                   <p className="text-muted-foreground">
-                    {response.snapshot.relations.length} foreign key
+                    {response.snapshot.relations.length}  
                     {response.snapshot.relations.length === 1 ? " relation" : " relations"} detected.
                   </p>
                 ) : (
