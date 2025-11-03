@@ -21,6 +21,7 @@ const ROUTE_HIGHLIGHTS: NavHighlight[] = [
   { label: "Tables view", href: "/database/tables", hint: "Ledger" },
   { label: "SQL preview", href: "/database/sql", hint: "Snapshot" },
   { label: "Charts", href: "/database/charts", hint: "Visualize" },
+  { label: "Performance", href: "/database/performance", hint: "Analytics" },
   { label: "Query history", href: "/database/history", hint: "History" },
   { label: "Import data", href: "/database/import", hint: "Import" },
   { label: "Export data", href: "/database/export", hint: "Export" },
