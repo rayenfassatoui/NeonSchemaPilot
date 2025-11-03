@@ -22,6 +22,7 @@ const ROUTE_HIGHLIGHTS: NavHighlight[] = [
   { label: "SQL preview", href: "/database/sql", hint: "Snapshot" },
   { label: "Charts", href: "/database/charts", hint: "Visualize" },
   { label: "Query history", href: "/database/history", hint: "History" },
+  { label: "Import data", href: "/database/import", hint: "Import" },
   { label: "Export data", href: "/database/export", hint: "Export" },
 ];
 
