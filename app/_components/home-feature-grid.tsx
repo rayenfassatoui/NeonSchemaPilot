@@ -1,4 +1,4 @@
-import { GitBranch, Share2, Sparkles, Table } from "lucide-react";
+import { Activity, FileUp, GitBranch, Share2, Sparkles, Table } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 
@@ -20,6 +20,18 @@ const features = [
     description:
       "Inspect column metadata alongside sample rows so analysts, engineers, and PMs can answer their own questions quickly.",
     icon: Table,
+  },
+  {
+    title: "Import data seamlessly",
+    description:
+      "Upload CSV, JSON, or SQL files with automatic type inference and validation. Preview changes before committing to your database.",
+    icon: FileUp,
+  },
+  {
+    title: "Performance analytics",
+    description:
+      "Monitor query execution times, identify slow queries, and get optimization recommendations to keep your database running smoothly.",
+    icon: Activity,
   },
   {
     title: "Context you can share",

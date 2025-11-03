@@ -1,4 +1,4 @@
-import { Database, Layers, ScrollText } from "lucide-react";
+import { Activity, Database, FileUp, Layers, ScrollText } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 import { Card } from "@/components/ui/card";
@@ -33,6 +33,20 @@ const highlights: Highlight[] = [
     meta: "SQL-first view",
     icon: ScrollText,
   },
+  {
+    title: "Data Import",
+    description:
+      "Upload CSV, JSON, or SQL files with smart type detection. Preview and validate data before importing to your database.",
+    meta: "Import tool",
+    icon: FileUp,
+  },
+  {
+    title: "Performance Monitor",
+    description:
+      "Track query execution times, identify bottlenecks, and receive actionable recommendations to optimize database performance.",
+    meta: "Analytics view",
+    icon: Activity,
+  },
 ];
 
 export function HomeWorkspaceHighlights() {
@@ -40,13 +54,13 @@ export function HomeWorkspaceHighlights() {
     <section className="rounded-[2rem] border border-border/50 bg-muted/20 p-12 shadow-inner shadow-primary/5 backdrop-blur-sm" id="workspace">
       <div className="flex flex-col gap-4 text-center">
         <span className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">Workspaces that scale with you</span>
-        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">One schema, three perspectives</h2>
+        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">One schema, multiple perspectives</h2>
         <p className="mx-auto max-w-3xl text-base text-muted-foreground">
-          Whether you think in diagrams, rows, or raw SQL, MyDatabase Studio keeps every perspective synchronized. Switch contexts without losing the thread of the conversation.
+          Whether you think in diagrams, rows, or raw SQL, MyDatabase Studio keeps every perspective synchronized. Import data, monitor performance, and switch contexts without losing the thread of the conversation.
         </p>
       </div>
       <Separator className="my-12 border-border/40" />
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {highlights.map((highlight) => {
           const Icon = highlight.icon;
           return (
