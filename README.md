@@ -14,6 +14,7 @@ Humanized database exploration for file-backed workspaces and Neon clusters. Ble
 - Visual database canvas with draggable tables and relation highlights
 - Dedicated tables view with column metadata and sample row explorer
 - SQL preview generated from the live schema snapshot
+- **Data Visualization Charts** - Interactive charts with automatic insights (bar, line, pie, area charts)
 - **Query History Tracker** - Monitor all executed queries with performance metrics, filters, and statistics
 - **Export Data** - Download tables in CSV, JSON, or SQL format for backups, analysis, or migration
 - Floating, draggable navbar that preserves the active connection string
