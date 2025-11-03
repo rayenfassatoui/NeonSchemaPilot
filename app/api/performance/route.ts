@@ -1,6 +1,7 @@
 /**
  * Performance Analytics API Route
  * Provides performance metrics, trends, and insights
+ * Updated: Connection string encoding fix applied
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -22,8 +23,11 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const timeRange = (searchParams.get("timeRange") || "24h") as TimeRange;
-    const connectionString = searchParams.get("connectionString");
+    const encodedConnectionString = searchParams.get("connectionString");
     const metric = searchParams.get("metric"); // specific metric to fetch
+
+    // Decode the URL-encoded connection string
+    const connectionString = encodedConnectionString ? decodeURIComponent(encodedConnectionString) : null;
 
     // Get query history
     const historyManager = getQueryHistoryManager();
@@ -33,7 +37,7 @@ export async function GET(req: NextRequest) {
     let tables: Array<{ name: string; columnCount: number; rowCount: number }> = [];
 
     if (connectionString) {
-      // Fetch from Neon - connectionString is already decoded from the page
+      // Fetch from Neon
       try {
         const sql = neon(connectionString);
 
@@ -47,11 +51,12 @@ export async function GET(req: NextRequest) {
         `;
 
         for (const table of tablesResult) {
-          const countResult = await sql`SELECT COUNT(*) as count FROM ${sql(table.name)}`;
+          // Use raw query for dynamic table names - need to properly escape identifier
+          // For now, skip row counts to avoid SQL injection risks with dynamic table names
           tables.push({
             name: table.name,
             columnCount: Number(table.column_count) || 0,
-            rowCount: Number(countResult[0]?.count) || 0,
+            rowCount: 0, // TODO: Implement safe dynamic table name querying
           });
         }
       } catch (error) {

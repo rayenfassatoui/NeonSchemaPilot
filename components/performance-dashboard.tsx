@@ -44,7 +44,8 @@ export function PerformanceDashboard({ connectionString }: PerformanceDashboardP
     try {
       const params = new URLSearchParams({ timeRange });
       if (connectionString) {
-        params.set("connectionString", connectionString);
+        // URL encode the connection string to prevent corruption of special characters
+        params.set("connectionString", encodeURIComponent(connectionString));
       }
 
       const response = await fetch(`/api/performance?${params}`);
