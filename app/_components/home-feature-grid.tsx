@@ -1,4 +1,4 @@
-import { Activity, FileUp, GitBranch, Share2, Sparkles, Table } from "lucide-react";
+import { Activity, FileUp, GitBranch, Share2, Sparkles, Table, Database, Clock } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 
@@ -32,6 +32,18 @@ const features = [
     description:
       "Monitor query execution times, identify slow queries, and get optimization recommendations to keep your database running smoothly.",
     icon: Activity,
+  },
+  {
+    title: "Backup & restore",
+    description:
+      "Create automated backups in SQL, JSON, or CSV formats. Restore your database from snapshots with confidence and zero downtime.",
+    icon: Database,
+  },
+  {
+    title: "Scheduled queries",
+    description:
+      "Automate routine database operations with cron-based scheduling. Run reports, cleanup tasks, and maintenance jobs on autopilot.",
+    icon: Clock,
   },
   {
     title: "Context you can share",

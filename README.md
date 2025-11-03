@@ -19,6 +19,8 @@ Humanized database exploration for file-backed workspaces and Neon clusters. Ble
 - **Query History Tracker** - Monitor all executed queries with performance metrics, filters, and statistics
 - **Import Data** - Upload and import data from CSV, JSON, or SQL files with schema inference and validation
 - **Export Data** - Download tables in CSV, JSON, or SQL format for backups, analysis, or migration
+- **Database Backup & Restore** - Create automated backups in SQL, JSON, or CSV formats with one-click restore
+- **Scheduled Queries** - Automate routine database operations with cron-based scheduling for reports and maintenance
 - Floating, draggable navbar that preserves the active connection string
 - Neon API integration via serverless routes for describe and table data fetching
 
