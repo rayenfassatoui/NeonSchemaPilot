@@ -3,22 +3,22 @@ import { Card } from "@/components/ui/card";
 
 const steps = [
   {
-    title: "Connect securely",
+    title: "Connect & explore",
     description:
-      "Paste a Neon connection string and we immediately validate it. No credentials are persisted—only a read-only snapshot leaves the server.",
-    detail: "Neon describe APIs power the schema and table samples we expose.",
+      "Paste your Neon connection string to instantly access your schema. Browse tables visually, inspect columns, and query data—all without leaving your browser.",
+    detail: "Secure connection handling with automatic schema detection and real-time sync.",
   },
   {
-    title: "Capture the full story",
+    title: "Build & optimize",
     description:
-      "We compile the schema, seed data, and AI intent into a structured plan. Visual and tabular explorers stay in sync with the SQL preview.",
-    detail: "The file-backed datastore keeps change proposals versioned and reviewable.",
+      "Use the AI assistant to draft queries, create backups, and schedule maintenance tasks. Monitor performance metrics and get smart optimization recommendations.",
+    detail: "AI-powered insights help you write better queries and maintain database health.",
   },
   {
-    title: "Share and iterate",
+    title: "Automate & collaborate",
     description:
-      "Send a single link to collaborators. They can inspect relations, ask the assistant for tweaks, or export ready-to-run SQL when the plan is approved.",
-    detail: "Role-aware controls make it easy to decide who can execute changes versus leave feedback.",
+      "Set up scheduled queries for reports, configure automated backups, and share workspace snapshots with your team. Everything stays synced across all views.",
+    detail: "Built-in automation tools reduce manual work and keep your database running smoothly.",
   },
 ] as const;
 
@@ -30,10 +30,10 @@ export function HomeWorkflow() {
           How it works
         </Badge>
         <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-          From connection string to actionable plan in minutes
+          From connection to production in three simple steps
         </h2>
         <p className="text-base text-muted-foreground">
-          MyDatabase Studio keeps technical and non-technical teammates aligned. We pair explainable AI output with the raw SQL so you can move from idea to deployment with confidence.
+          MyDatabase Studio streamlines your entire database workflow. Connect once, then explore, optimize, and automate everything from a single intuitive interface.
         </p>
       </div>
       <ol className="space-y-6">

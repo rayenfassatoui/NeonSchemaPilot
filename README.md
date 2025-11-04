@@ -10,19 +10,31 @@ Humanized database exploration for file-backed workspaces and Neon clusters. Ble
 
 ## Features
 
-- Gemini-powered assistant that plans and executes DDL, DML, DQL, and DCL against a file-based datastore
-- Visual database canvas with draggable tables and relation highlights
-- Dedicated tables view with column metadata and sample row explorer
-- SQL preview generated from the live schema snapshot
-- **Data Visualization Charts** - Interactive charts with automatic insights (bar, line, pie, area charts)
-- **Performance Analytics** - Real-time performance monitoring, slow query detection, and optimization recommendations
-- **Query History Tracker** - Monitor all executed queries with performance metrics, filters, and statistics
-- **Import Data** - Upload and import data from CSV, JSON, or SQL files with schema inference and validation
-- **Export Data** - Download tables in CSV, JSON, or SQL format for backups, analysis, or migration
-- **Database Backup & Restore** - Create automated backups in SQL, JSON, or CSV formats with one-click restore
-- **Scheduled Queries** - Automate routine database operations with cron-based scheduling for reports and maintenance
-- Floating, draggable navbar that preserves the active connection string
-- Neon API integration via serverless routes for describe and table data fetching
+### 🤖 AI-Powered Development
+- **Gemini-powered assistant** - Plans and executes DDL, DML, DQL, and DCL operations against a safe file-based datastore
+- **Intelligent query suggestions** - Get smart recommendations based on your schema and query patterns
+
+### 📊 Data Visualization & Analysis
+- **Interactive Charts** - Create bar, line, pie, and area charts with automatic insights and trend detection
+- **Visual Database Canvas** - Drag tables, trace foreign keys, and visualize relationships on an infinite canvas
+- **Tables Explorer** - Inspect column metadata and sample rows with advanced filtering and search
+
+### ⚡ Performance & Monitoring
+- **Performance Analytics** - Real-time monitoring with slow query detection and optimization recommendations
+- **Query History Tracker** - Complete audit trail of executed queries with performance metrics and statistics
+- **Execution Insights** - Identify bottlenecks and get actionable performance improvement suggestions
+
+### 💾 Data Management
+- **Import Data** - Upload CSV, JSON, or SQL files with automatic type inference and validation
+- **Export Data** - Download tables in multiple formats for backups, analysis, or migration
+- **Backup & Restore** - Create automated backups in SQL, JSON, or CSV formats with preview and verification
+- **Scheduled Queries** - Automate routine operations with cron-based scheduling for reports and maintenance tasks
+
+### 🔧 Developer Experience
+- **SQL Preview** - Live-generated SQL from schema snapshots with syntax highlighting
+- **Floating Navigation** - Draggable navbar that preserves active connection context across views
+- **Neon Integration** - Seamless connection to Neon PostgreSQL with secure credential handling
+- **Multi-View Support** - Switch between visual, tabular, and SQL-first perspectives without losing context
 
 ## Prerequisites
 
@@ -46,6 +58,26 @@ bunx tsc --noEmit
 
 Open `http://localhost:3000` to use the interface. From the landing page, click **Connect with Neon URL**, paste your connection string, and you will be redirected to the database workspace with your schema snapshot.
 
+## Feature Quick Start
+
+### 🤖 AI Assistant
+Navigate to the **AI Studio** to draft queries, plan schema changes, and get intelligent suggestions based on your database structure.
+
+### 📊 Visualizations
+Use the **Charts** view to create interactive visualizations of your data. The system automatically suggests chart types and provides insights.
+
+### ⚡ Performance Monitoring
+Check the **Performance** dashboard to monitor query execution times, identify slow queries, and receive optimization recommendations.
+
+### 💾 Backup & Restore
+Go to **Backup & Restore** to create snapshots in SQL, JSON, or CSV formats. Preview estimated sizes before downloading.
+
+### ⏰ Scheduled Queries
+Set up **Scheduled Queries** to automate reports, cleanup tasks, and maintenance operations with cron-based scheduling.
+
+### 📥 Import/Export Data
+Use **Import Data** to upload CSV, JSON, or SQL files with automatic type inference, or **Export Data** to download tables in multiple formats.
+
 ## Environment & Connection Notes
 
 - Connection strings are passed around the app via the `connection` search param (base64 encoded). The navbar keeps this param on internal navigation so the same database context persists.
@@ -64,10 +96,31 @@ The build uses Next.js 16 with Turbopack. Ensure any client components that call
 
 ## Project Structure Highlights
 
-- `app/database/` – routed layouts for Visual, Tables, and SQL views
-- `components/database-diagram/**` – canvas rendering primitives
-- `app/api/neon/` – serverless routes that proxy Neon APIs
-- `components/site-navbar.tsx` – floating navigation shared across pages
+### Core Application
+- `app/database/` – Database workspace with Visual, Tables, SQL, Charts, Performance, and History views
+- `app/ai/` – AI assistant interface for schema planning and query generation
+- `components/database-diagram/` – Interactive canvas rendering with drag-and-drop tables
+
+### API Routes
+- `app/api/neon/` – Serverless routes for Neon database operations (describe, table-data)
+- `app/api/backup/` – Backup creation and preview endpoints
+- `app/api/schedules/` – Scheduled query management
+- `app/api/performance/` – Performance metrics and analytics
+- `app/api/import/` – Data import from CSV, JSON, SQL files
+- `app/api/export/` – Data export in multiple formats
+
+### Components
+- `components/backup-manager.tsx` – Backup creation and history interface
+- `components/schedule-manager.tsx` – Scheduled query configuration
+- `components/performance-dashboard.tsx` – Performance monitoring dashboard
+- `components/site-navbar.tsx` – Floating navigation with connection context
+
+### Utilities
+- `lib/backup-utils.ts` – Backup generation and validation logic
+- `lib/schedule-utils.ts` – Cron scheduling and query management
+- `lib/performance-utils.ts` – Performance calculation and recommendations
+- `lib/import-utils.ts` – File parsing and type inference
+- `lib/file-db/` – File-based database implementation
 
 ## Deployment
 

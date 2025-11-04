@@ -53,10 +53,10 @@ export function HomeWorkspaceHighlights() {
   return (
     <section className="rounded-[2rem] border border-border/50 bg-muted/20 p-12 shadow-inner shadow-primary/5 backdrop-blur-sm" id="workspace">
       <div className="flex flex-col gap-4 text-center">
-        <span className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">Workspaces that scale with you</span>
-        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">One schema, multiple perspectives</h2>
+        <span className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">Complete Database Toolset</span>
+        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Five powerful tools, one seamless experience</h2>
         <p className="mx-auto max-w-3xl text-base text-muted-foreground">
-          Whether you think in diagrams, rows, or raw SQL, MyDatabase Studio keeps every perspective synchronized. Import data, monitor performance, and switch contexts without losing the thread of the conversation.
+          From visual exploration to automated operations, MyDatabase Studio provides everything you need to manage modern databases. Each tool is designed to work together, giving you the flexibility to approach problems your way while maintaining a consistent, productive workflow.
         </p>
       </div>
       <Separator className="my-12 border-border/40" />

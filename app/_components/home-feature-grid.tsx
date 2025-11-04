@@ -58,9 +58,9 @@ export function HomeFeatureGrid() {
     <section className="mx-auto w-full max-w-5xl space-y-10 text-center" id="features">
       <div className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">Why MyDatabase Studio</p>
-        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Built for database storytellers</h2>
+        <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Everything you need to manage databases efficiently</h2>
         <p className="mx-auto max-w-2xl text-base text-muted-foreground">
-          We designed every surface to help teams understand the intent behind a schema change, not just the SQL. Each tool works together so you can move from discovery to approval without friction.
+          From AI-powered query building to automated backups and performance monitoring, MyDatabase Studio brings together all the tools modern teams need to work confidently with their databases. No context switching, no scattered tools—just one powerful workspace.
         </p>
       </div>
       <div className="grid gap-6 md:grid-cols-2">

@@ -23,23 +23,29 @@ export function HomeHero({ summaryLabel, sqlPreview, onSnapshot }: HomeHeroProps
             <span className="h-1 w-1 rounded-full bg-primary" />
           </span>
           <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Connect your database effortlessly
+            Your complete database workspace in one place
           </h1>
           <p className="max-w-xl text-lg text-muted-foreground">
-            Drop in a Neon connection string and instantly spin up a workspace that pairs human-friendly context with reliable SQL truth. No dumps, no migrations, just clarity.
+            Connect to Neon PostgreSQL and unlock AI-powered query building, visual schema exploration, performance monitoring, automated backups, and scheduled tasks—all in one intuitive interface.
           </p>
         </div>
         <div className="space-y-4 text-sm text-muted-foreground">
           <div className="flex gap-3">
             <span className="mt-1 h-2 w-2 flex-none rounded-full bg-primary/80" />
             <p className="leading-relaxed">
-              We inspect your schema securely and generate a snapshot you can share without exposing credentials or production data.
+              <strong>AI-Powered:</strong> Let Gemini draft queries, suggest optimizations, and help you understand complex schemas without digging through documentation.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <span className="mt-1 h-2 w-2 flex-none rounded-full bg-primary/70" />
+            <p className="leading-relaxed">
+              <strong>Visual & Intuitive:</strong> Drag tables, visualize relationships, create charts, and explore data with instant previews and real-time updates.
             </p>
           </div>
           <div className="flex gap-3">
             <span className="mt-1 h-2 w-2 flex-none rounded-full bg-primary/60" />
             <p className="leading-relaxed">
-              Give teammates a single URL with visual canvases, tables, and SQL views so they can explore on their own terms.
+              <strong>Production-Ready:</strong> Monitor performance, schedule maintenance tasks, create backups, and track query history—all from a single dashboard.
             </p>
           </div>
         </div>
