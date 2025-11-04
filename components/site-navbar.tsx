@@ -27,6 +27,8 @@ const ROUTE_HIGHLIGHTS: NavHighlight[] = [
   { label: "Export data", href: "/database/export", hint: "Export" },
   { label: "Backup & Restore", href: "/database/backup", hint: "Backup" },
   { label: "Scheduled Queries", href: "/database/schedules", hint: "Schedules" },
+  { label: "Favorites", href: "/database/favorites", hint: "Bookmarks" },
+  { label: "Query Templates", href: "/database/templates", hint: "Templates" },
 ];
 
 function formatPath(pathname: string) {
