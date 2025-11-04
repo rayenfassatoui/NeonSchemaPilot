@@ -1,4 +1,4 @@
-import { Activity, FileUp, GitBranch, Share2, Sparkles, Table, Database, Clock, Star, FileText } from "lucide-react";
+import { Activity, FileUp, GitBranch, Share2, Sparkles, Table, Database, Clock } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 
@@ -44,18 +44,6 @@ const features = [
     description:
       "Automate routine database operations with cron-based scheduling. Run reports, cleanup tasks, and maintenance jobs on autopilot.",
     icon: Clock,
-  },
-  {
-    title: "Favorites & bookmarks",
-    description:
-      "Save frequently used tables, queries, views, and charts. Track access counts and organize resources by folders for instant retrieval.",
-    icon: Star,
-  },
-  {
-    title: "Query templates",
-    description:
-      "Kickstart SQL development with pre-built templates for common operations. Create custom templates with placeholders for reusable patterns.",
-    icon: FileText,
   },
   {
     title: "Context you can share",

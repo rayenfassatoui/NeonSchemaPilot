@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "query": "CREATE TABLE projects (title text, owner_email text, status text)",
+    "operationType": "DDL",
+    "status": "error",
+    "executionTimeMs": 0,
+    "errorMessage": "Table \"projects\" already exists.",
+    "tables": [
+      "projects"
+    ],
+    "id": "b6efd429-c9c5-4bae-b65b-dff6a6b7331c",
+    "executedAt": "2025-11-04T00:15:34.771Z"
+  },
+  {
+    "query": "CREATE TABLE projects (title text, owner_email text, status text)",
+    "operationType": "DDL",
+    "status": "success",
+    "executionTimeMs": 192,
+    "tables": [
+      "projects"
+    ],
+    "id": "7b292ea5-f151-4c38-b1ee-4732a02350cb",
+    "executedAt": "2025-11-04T00:15:24.062Z"
+  }
+]
